@@ -1,6 +1,6 @@
 ## Run
 ```bash
-mvn clean package
+./mvnw clean package
 java -jar .\target\http-server-1.0-SNAPSHOT.jar
 ```
 
