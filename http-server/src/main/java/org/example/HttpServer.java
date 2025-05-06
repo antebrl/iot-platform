@@ -1,14 +1,14 @@
 package org.example;
 
+import com.google.gson.JsonSyntaxException;
+
 import java.io.*;
 import java.net.*;
-import java.text.SimpleDateFormat;
 import java.util.*;
-import org.example.HttpResponse;
 
 public class HttpServer {
     private static final int PORT = 8080;
-    private static final List<String> storedData = new ArrayList<>();
+    private static final DataStorage dataStorage = new DataStorage();
 
     public static void main(String[] args) throws IOException {
         ServerSocket serverSocket = new ServerSocket(PORT);
@@ -28,11 +28,10 @@ public class HttpServer {
             if (requestLine == null || requestLine.isEmpty()) return;
 
             String method = requestLine.split(" ")[0];
-            String path = requestLine.split(" ")[1];
             int contentLength = 0;
             Map<String, String> headers = new HashMap<>();
 
-            // Header lesen
+            // Read headers
             String line;
             while (!(line = in.readLine()).isEmpty()) {
                 String[] headerParts = line.split(":", 2);
@@ -45,19 +44,29 @@ public class HttpServer {
                 contentLength = Integer.parseInt(headers.getOrDefault("content-length", "0"));
                 char[] bodyChars = new char[contentLength];
                 in.read(bodyChars);
-                String data = new String(bodyChars);
-                storedData.add(data);
+                String jsonBody = new String(bodyChars);
 
-                HttpResponse response = new HttpResponse.Builder()
-                        .status(200, "OK")
-                        .header("Content-Type", "text/plain")
-                        .body("Data received.")
-                        .build();
+                try {
+                    dataStorage.addFromJson(jsonBody);
 
-                out.write(response.toString());
+                    HttpResponse response = new HttpResponse.Builder()
+                            .status(200, "OK")
+                            .header("Content-Type", "text/plain")
+                            .body("Data received.")
+                            .build();
+                    out.write(response.toString());
+
+                } catch (JsonSyntaxException e) {
+                    HttpResponse response = new HttpResponse.Builder()
+                            .status(400, "Bad Request")
+                            .header("Content-Type", "text/plain")
+                            .body("Invalid JSON: " + e.getMessage())
+                            .build();
+                    out.write(response.toString());
+                }
 
             } else if (method.equalsIgnoreCase("GET")) {
-                String responseBody = String.join("\n", storedData);
+                String responseBody = dataStorage.asText();
 
                 HttpResponse response = new HttpResponse.Builder()
                         .status(200, "OK")

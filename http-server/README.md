@@ -1,7 +1,7 @@
 ## Run
 ```bash
 ./mvnw clean package
-java -jar .\target\http-server-1.0-SNAPSHOT.jar
+java -jar .\target\http-server-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
 ## Try it out
