@@ -23,7 +23,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>HttpServer</mainClass>
+                            <mainClass>org/example/HttpServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
