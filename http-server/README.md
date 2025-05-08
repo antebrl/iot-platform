@@ -13,3 +13,8 @@ curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d "{\"se
 ```bash
 curl http://localhost:8080
 ```
+##
+```bash
+mvn clean compile
+mvn clean test
+```
