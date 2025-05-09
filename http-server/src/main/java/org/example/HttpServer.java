@@ -41,10 +41,12 @@ public class HttpServer {
             }
 
             if (method.equalsIgnoreCase("POST")) {
+                System.out.println("POST request received.");
                 contentLength = Integer.parseInt(headers.getOrDefault("content-length", "0"));
                 char[] bodyChars = new char[contentLength];
                 in.read(bodyChars);
                 String jsonBody = new String(bodyChars);
+                System.out.println("Received JSON: " + jsonBody);
 
                 try {
                     dataStorage.addFromJson(jsonBody);
@@ -66,6 +68,7 @@ public class HttpServer {
                 }
 
             } else if (method.equalsIgnoreCase("GET")) {
+                System.out.println("GET request received.");
                 String responseBody = dataStorage.asText();
 
                 HttpResponse response = new HttpResponse.Builder()

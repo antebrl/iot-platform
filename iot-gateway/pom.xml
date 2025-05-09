@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.example</groupId>
-    <artifactId>http-server</artifactId>
+    <artifactId>iot-gateway</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -20,6 +20,14 @@
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.0</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -31,7 +39,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org/example/HttpServer</mainClass>
+                            <mainClass>org/example/IoTGateway</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -45,7 +53,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>org.example.HttpServer</mainClass>
+                            <mainClass>org.example.IoTGateway</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

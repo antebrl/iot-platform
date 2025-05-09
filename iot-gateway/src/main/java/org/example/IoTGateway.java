@@ -3,16 +3,25 @@ package org.example;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Random;
+import com.google.gson.Gson;
 
 public class IoTGateway {
+    private static final Gson gson = new Gson();
+    private static final Random random = new Random();
+
+    // 3-7s sleep time
+    private static final int BASE_SLEEP_TIME = 3000; // in ms
+    private static final int RANDOM_VARIATION = 4000; // in ms
+
     public static void main(String[] args) throws InterruptedException {
-        String host = "http-server";
+        String host = System.getenv().getOrDefault("HTTP_SERVER_HOST", "localhost");
         int port = 8080;
 
         while (true) {
             // Zufällige Sensordaten generieren
             SensorData data = SensorData.generateRandom();
-            String json = data.toJson();
+            String json = gson.toJson(data);
 
             // HTTP-POST-Anfrage aufbauen
             String httpRequest =
@@ -32,18 +41,18 @@ public class IoTGateway {
                 output.write(httpRequest.getBytes(StandardCharsets.UTF_8));
                 output.flush();
 
-                System.out.println("Gesendet:\n" + json);
-
                 String line;
+                System.out.println("\nResponse: ");
                 while ((line = reader.readLine()) != null) {
-                    System.out.println("Antwort: " + line);
+                    System.out.println(line);
                 }
 
             } catch (IOException e) {
-                System.err.println("Verbindungsfehler: " + e.getMessage());
+                System.err.println("Connection failure: " + e.getMessage());
             }
 
-            Thread.sleep(1000); // 1 Sekunde Pause
+            int sleepTime = BASE_SLEEP_TIME + random.nextInt(RANDOM_VARIATION);
+            Thread.sleep(sleepTime); // 5 second
         }
     }
 }
