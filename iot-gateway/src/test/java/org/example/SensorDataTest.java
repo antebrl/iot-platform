@@ -1,43 +1,46 @@
-//package org.example;
-//
-//import org.junit.jupiter.api.Test;
-//import static org.junit.jupiter.api.Assertions.*;
-//
-//public class SensorDataTest {
-//
-//    @Test
-//    public void testGeneratedValuesWithinRange() {
-//        SensorData data = SensorData.generateRandom();
-//
-//        assertTrue(data.getTemperature() >= 15 && data.getTemperature() <= 30, "Temperature out of range");
-//        assertTrue(data.getHumidity() >= 30 && data.getHumidity() < 80, "Humidity out of range");
-//        assertTrue(data.getPressure() >= 980 && data.getPressure() <= 1050, "Pressure out of range");
-//        assertTrue(data.getCo2() >= 400 && data.getCo2() < 1000, "CO₂ out of range");
-//
-//        assertTrue(data.getSensorIdTemp() >= 1000 && data.getSensorIdTemp() < 2000);
-//        assertTrue(data.getSensorIdHumid() >= 2000 && data.getSensorIdHumid() < 3000);
-//        assertTrue(data.getSensorIdPress() >= 3000 && data.getSensorIdPress() < 4000);
-//        assertTrue(data.getSensorIdCO2() >= 4000 && data.getSensorIdCO2() < 5000);
-//    }
-//
-//    @Test
-//    public void testJsonFormatNotEmpty() {
-//        SensorData data = SensorData.generateRandom();
-//        String json = data.toJson();
-//        assertNotNull(json);
-//        assertTrue(json.contains("\"temperature\""));
-//        assertTrue(json.contains("\"humidity\""));
-//        assertTrue(json.contains("\"pressure\""));
-//        assertTrue(json.contains("\"co2\""));
-//    }
-//
-//    @Test
-//    public void testToStringContainsKeywords() {
-//        SensorData data = SensorData.generateRandom();
-//        String output = data.toString();
-//        assertTrue(output.contains("Temperatursensor"));
-//        assertTrue(output.contains("Luftfeuchtigkeitssensor"));
-//        assertTrue(output.contains("Luftdrucksensor"));
-//        assertTrue(output.contains("CO₂-Sensor"));
-//    }
-//}
+package org.example;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+class SensorDataTest {
+
+    @Test
+    void testGenerateRandomSensorIdInRange() {
+        for (int i = 0; i < 100; i++) {
+            SensorData data = SensorData.generateRandom();
+            int sensorId = data.getSensorId();
+            assertTrue(sensorId >= 1000 && sensorId < 2000, "SensorId sollte zwischen 1000 und 1999 liegen");
+        }
+    }
+
+    @Test
+    void testGenerateRandomTemperatureInRangeAndPrecision() {
+        for (int i = 0; i < 100; i++) {
+            SensorData data = SensorData.generateRandom();
+            double temp = data.getTemperature();
+            assertTrue(temp >= 15.0 && temp <= 30.0, "Temperatur sollte zwischen 15.0 und 30.0 liegen");
+
+            // Prüfe, ob auf 2 Nachkommastellen gerundet
+            String[] parts = String.valueOf(temp).split("\\.");
+            if (parts.length == 2) {
+                assertTrue(parts[1].length() <= 2, "Temperatur sollte höchstens 2 Nachkommastellen haben");
+            }
+        }
+    }
+
+    @Test
+    void testToStringFormat() {
+        SensorData data = SensorData.generateRandom();
+        String result = data.toString();
+        assertTrue(result.contains("Sensor ID: "), "String sollte 'Sensor ID: ' enthalten");
+        assertTrue(result.contains("Temperatur: "), "String sollte 'Temperatur: ' enthalten");
+    }
+
+    @Test
+    void testRoundMethod() {
+        assertEquals(3.14, SensorData.round(3.14159, 2));
+        assertEquals(3.0, SensorData.round(3.001, 0));
+        assertThrows(IllegalArgumentException.class, () -> SensorData.round(3.14, -1));
+    }
+}
