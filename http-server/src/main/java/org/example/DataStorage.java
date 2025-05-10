@@ -11,10 +11,10 @@ public class DataStorage {
     public synchronized void addFromJson(String json) {
         SensorData data = gson.fromJson(json, SensorData.class);
         entries.add(data);
-    }
-
+    }    
+    
     public synchronized List<SensorData> getAll() {
-        return new ArrayList<>(entries);
+        return entries; 
     }
 
     public synchronized String asText() {
@@ -23,5 +23,12 @@ public class DataStorage {
             sb.append(data).append("\n");
         }
         return sb.toString();
+    }
+    
+    /**
+     * Returns all sensor data as a JSON string
+     */
+    public synchronized String asJson() {
+        return gson.toJson(entries);
     }
 }
