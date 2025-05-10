@@ -1,5 +1,9 @@
 # Performance Test Evaluation
 
+Team Members Involved:
+- Ante Brähler
+- Christian Neufeld
+
 ## Test Configuration
 
 - **Tool**: Apache JMeter
