@@ -11,8 +11,7 @@ public class IoTGateway {
     private static final Random random = new Random();
 
     // 3-7s sleep time
-    private static final int BASE_SLEEP_TIME = 3000; // in ms
-    private static final int RANDOM_VARIATION = 4000; // in ms
+    private static final int SLEEP_TIME_VARIATION = 4000; // in ms
 
     public static void main(String[] args) throws InterruptedException {
         String host = System.getenv().getOrDefault("HTTP_SERVER_HOST", "localhost");
@@ -51,7 +50,7 @@ public class IoTGateway {
                 System.err.println("Connection failure: " + e.getMessage());
             }
 
-            int sleepTime = BASE_SLEEP_TIME + random.nextInt(RANDOM_VARIATION);
+            int sleepTime = random.nextInt(SLEEP_TIME_VARIATION);
             Thread.sleep(sleepTime); // 5 second
         }
     }

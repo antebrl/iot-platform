@@ -1,9 +1,8 @@
 version: '3.3'
 services:
-  gateway:
+  iot-gateway:
     build:
       context: ./iot-gateway
-    container_name: iot-gateway
     environment:
       - HTTP_SERVER_HOST=http-server
     depends_on:
@@ -12,6 +11,5 @@ services:
   http-server:
     build:
       context: ./http-server
-    container_name: http-server
     ports:
       - "8080:8080"
