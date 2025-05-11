@@ -145,6 +145,8 @@ public class HttpServer {
         return new HttpResponse.Builder()
                 .status(200, "OK")
                 .header("Content-Type", "application/json")
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "GET")
                 .body(responseBody)
                 .build();
     }

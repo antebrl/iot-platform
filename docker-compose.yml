@@ -13,3 +13,13 @@ services:
       context: ./http-server
     ports:
       - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - http-server
+    environment:
+      - VITE_API_URL=http://http-server:8080

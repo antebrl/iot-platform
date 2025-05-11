@@ -5,12 +5,16 @@ import java.util.concurrent.ThreadLocalRandom;
 public class SensorData {
     private int sensorId;
     private double temperature;
+    
+    // Predefined list of sensor IDs
+    private static final int[] SENSOR_IDS = {1001, 1002, 1003, 1004, 1005, 1234, 1567, 1890};
 
     public static SensorData generateRandom() {
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         SensorData data = new SensorData();
-        data.sensorId = rnd.nextInt(1000, 2000);
-        data.temperature = round(rnd.nextDouble(15, 30), 2);
+        // Select a random sensor ID from the predefined list
+        data.sensorId = SENSOR_IDS[rnd.nextInt(SENSOR_IDS.length)];
+        data.temperature = round(rnd.nextDouble(5, 30), 2);
         return data;
     }
 
@@ -27,6 +31,6 @@ public class SensorData {
 
     @Override
     public String toString() {
-        return "Sensor ID: " + sensorId + ", Temperatur: " + temperature;
+        return "Sensor ID: " + sensorId + ", Temperature: " + temperature;
     }
 }
