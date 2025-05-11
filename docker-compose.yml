@@ -1,0 +1,25 @@
+version: '3.3'
+services:
+  iot-gateway:
+    build:
+      context: ./iot-gateway
+    environment:
+      - HTTP_SERVER_HOST=http-server
+    depends_on:
+      - http-server
+
+  http-server:
+    build:
+      context: ./http-server
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - http-server
+    environment:
+      - VITE_API_URL=http://http-server:8080

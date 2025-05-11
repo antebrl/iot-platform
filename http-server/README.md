@@ -1,0 +1,34 @@
+## HTTP Server
+
+A simple socket-based HTTP server for handling sensor data using JSON.
+
+### Run standalone
+
+```bash
+./mvnw clean package
+java -jar .\target\http-server-1.0-SNAPSHOT-jar-with-dependencies.jar
+```
+
+The server application will start on port `8080` by default.
+
+### Try it out
+
+In CMD:
+
+`POST REQUEST` to add a new sensor data point:
+```bash
+curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d "{\"sensorId\":42,\"temperature\":23.5}"
+```
+
+`GET REQUEST` to retrieve all sensor data points:
+```bash
+curl http://localhost:8080
+```
+
+## Testing
+
+### Running Tests
+
+```bash
+mvn clean test
+```

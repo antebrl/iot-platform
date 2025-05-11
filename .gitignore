@@ -1,6 +1,7 @@
 **/.idea/
-**/.mvn/
 **/target/
+
+.env
 
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/

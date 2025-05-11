@@ -5,31 +5,29 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.example</groupId>
-    <artifactId>http-server</artifactId>
+    <artifactId>iot-gateway</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>23</maven.compiler.source>
         <maven.compiler.target>23</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>    <dependencies>
+    </properties>
+
+    <dependencies>
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
         </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>5.10.2</version>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.0</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.10.2</version>
-            <scope>test</scope>
-        </dependency>
+
     </dependencies>
 
     <build>
@@ -37,10 +35,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.1</version>                <configuration>
+                <version>3.4.1</version>
+                <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.example.ServerApplication</mainClass>
+                            <mainClass>org/example/IoTGateway</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -51,9 +50,10 @@
                 <configuration>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>                    <archive>
+                    </descriptorRefs>
+                    <archive>
                         <manifest>
-                            <mainClass>org.example.ServerApplication</mainClass>
+                            <mainClass>org.example.IoTGateway</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -65,11 +65,7 @@
                             <goal>single</goal>
                         </goals>
                     </execution>
-                </executions>            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
+                </executions>
             </plugin>
         </plugins>
     </build>
