@@ -8,20 +8,23 @@ import org.example.Empty;
 import org.example.Key;
 import org.example.Response;
 import org.example.CreateResponse;
-import org.example.SensorDataProto;
-import org.example.SensorDataWithId;
-import org.example.SensorDataWithIdList;
+import org.example.SensorDataRequest;
+import org.example.SensorDataStored;
+import org.example.SensorDataStoredList;
 
 public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImplBase {
 
-    private final ConcurrentHashMap<String, SensorDataProto> db = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, SensorDataStored> db = new ConcurrentHashMap<>();
 
     @Override
-    public void create(SensorDataProto request, StreamObserver<CreateResponse> responseObserver) {
+    public void create(SensorDataRequest request, StreamObserver<CreateResponse> responseObserver) {
         String id = UUID.randomUUID().toString();
-        SensorDataProto dataToStore = SensorDataProto.newBuilder()
-                .setValue(request.getValue())
+        SensorDataStored dataToStore = SensorDataStored.newBuilder()
+                .setId(id)
+                .setSensorId(request.getSensorId())
+                .setTemperature(request.getTemperature())
                 .build();
+
         boolean inserted = db.putIfAbsent(id, dataToStore) == null;
 
         CreateResponse response = CreateResponse.newBuilder()
@@ -34,23 +37,19 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
     }
 
     @Override
-    public void read(Key request, StreamObserver<SensorDataWithId> responseObserver) {
-        SensorDataProto data = db.get(request.getId());
+    public void read(Key request, StreamObserver<SensorDataStored> responseObserver) {
+        SensorDataStored data = db.get(request.getId());
         if (data != null) {
-            responseObserver.onNext(
-                    SensorDataWithId.newBuilder()
-                            .setId(request.getId())
-                            .setData(data)
-                            .build());
+            responseObserver.onNext(data);
         }
         responseObserver.onCompleted();
     }
 
     @Override
-    public void update(SensorDataWithId request, StreamObserver<Response> responseObserver) {
+    public void update(SensorDataStored request, StreamObserver<Response> responseObserver) {
         String id = request.getId();
-        SensorDataProto newData = request.getData();
-        boolean updated = db.replace(id, newData) != null;
+        // Only update if the entry exists
+        boolean updated = db.replace(id, request) != null;
         sendResponse(responseObserver, updated,
                 updated ? "Entry updated." : "Entry not found.");
     }
@@ -63,11 +62,9 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
     }
 
     @Override
-    public void readAll(Empty request, StreamObserver<SensorDataWithIdList> responseObserver) {
-        SensorDataWithIdList.Builder listBuilder = SensorDataWithIdList.newBuilder();
-        db.forEach((id, data) -> listBuilder.addEntries(
-                SensorDataWithId.newBuilder().setId(id).setData(data).build()
-        ));
+    public void readAll(Empty request, StreamObserver<SensorDataStoredList> responseObserver) {
+        SensorDataStoredList.Builder listBuilder = SensorDataStoredList.newBuilder();
+        db.values().forEach(listBuilder::addEntries);
         responseObserver.onNext(listBuilder.build());
         responseObserver.onCompleted();
     }

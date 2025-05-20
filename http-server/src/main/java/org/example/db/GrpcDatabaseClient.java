@@ -7,9 +7,9 @@ import org.example.Empty;
 import org.example.Key;
 import org.example.Response;
 import org.example.CreateResponse;
-import org.example.SensorDataProto;
-import org.example.SensorDataWithId;
-import org.example.SensorDataWithIdList;
+import org.example.SensorDataRequest;
+import org.example.SensorDataStored;
+import org.example.SensorDataStoredList;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -24,17 +24,17 @@ public class GrpcDatabaseClient {
         stub = DatabaseServiceGrpc.newBlockingStub(channel);
     }
 
-    public CreateResponse create(SensorDataProto data) {
+    public CreateResponse create(SensorDataRequest data) {
         return stub.create(data);
     }
 
-    public SensorDataWithId read(String id) {
+    public SensorDataStored read(String id) {
         Key key = Key.newBuilder().setId(id).build();
         return stub.read(key);
     }
 
-    public Response update(SensorDataWithId dataWithId) {
-        return stub.update(dataWithId);
+    public Response update(SensorDataStored dataStored) {
+        return stub.update(dataStored);
     }
 
     public Response delete(String id) {
@@ -42,7 +42,7 @@ public class GrpcDatabaseClient {
         return stub.delete(key);
     }
 
-    public SensorDataWithIdList readAll() {
+    public SensorDataStoredList readAll() {
         Empty request = Empty.newBuilder().build();
         return stub.readAll(request);
     }
