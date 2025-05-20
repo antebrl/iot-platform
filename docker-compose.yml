@@ -23,3 +23,11 @@ services:
       - http-server
     environment:
       - VITE_API_URL=http://http-server:8080
+
+  rpc-database:
+    build:
+      context: ./rpc-database
+    ports:
+      - "50051:50051"
+    depends_on:
+      - http-server

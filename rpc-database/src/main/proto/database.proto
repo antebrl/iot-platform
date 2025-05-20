@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package proto;
+option java_package = "org.example";
+option java_multiple_files = true;
+
+service DatabaseService {
+  rpc Create (DataEntry) returns (Response);
+  rpc Read   (Key)       returns (DataEntry);
+  rpc Update (DataEntry) returns (Response);
+  rpc Delete (Key)       returns (Response);
+}
+
+message Key {
+  string id = 1;
+}
+
+message DataEntry {
+  string id    = 1;
+  string value = 2;
+}
+
+message Response {
+  bool   success = 1;
+  string message = 2;
+}
