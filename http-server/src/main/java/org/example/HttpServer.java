@@ -113,14 +113,22 @@ public class HttpServer {
      * Processes the parsed request and returns an appropriate response
      */
     private HttpResponse processRequest(HttpRequest request) {
-        if (request.getMethod().equalsIgnoreCase("POST")) {
-            System.out.println("POST request received.");
-            return handlePostRequest(request.getBody());
-        } else if (request.getMethod().equalsIgnoreCase("GET")) {
-            System.out.println("GET request received.");
-            return handleGetRequest();
-        } else {
-            return handleUnsupportedMethod();
+        String method = request.getMethod().toUpperCase();
+        switch (method) {
+            case "POST":
+                System.out.println("POST request received.");
+                return handlePostRequest(request.getBody());
+            case "GET":
+                System.out.println("GET request received.");
+                return handleGetRequest();
+            case "PUT":
+                System.out.println("PUT request received.");
+                return handlePutRequest(request.getBody());
+            case "DELETE":
+                System.out.println("DELETE request received.");
+                return handleDeleteRequest(request.getPath());
+            default:
+                return handleUnsupportedMethod();
         }
     }
     
@@ -168,12 +176,80 @@ public class HttpServer {
     }
     
     /**
+     * Handles PUT requests for updating existing data
+     */
+    private HttpResponse handlePutRequest(String jsonBody) {
+        try {
+            SensorData data = gson.fromJson(jsonBody, SensorData.class);
+            if (data.getId() == null || data.getId().isEmpty()) {
+                return new HttpResponse.Builder()
+                        .status(400, "Bad Request")
+                        .header("Content-Type", "text/plain")
+                        .body("Missing ID in update request.")
+                        .build();
+            }
+            
+            boolean success = dataStorage.update(data);
+            if (success) {
+                return new HttpResponse.Builder()
+                        .status(200, "OK")
+                        .header("Content-Type", "text/plain")
+                        .body("Data updated successfully.")
+                        .build();
+            } else {
+                return new HttpResponse.Builder()
+                        .status(404, "Not Found")
+                        .header("Content-Type", "text/plain")
+                        .body("Data not found or update failed.")
+                        .build();
+            }
+        } catch (JsonSyntaxException e) {
+            return new HttpResponse.Builder()
+                    .status(400, "Bad Request")
+                    .header("Content-Type", "text/plain")
+                    .body("Invalid JSON: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    /**
+     * Handles DELETE requests by extracting the ID from the path
+     */
+    private HttpResponse handleDeleteRequest(String path) {
+        // Extract ID from path (e.g., /delete/123)
+        String[] parts = path.split("/");
+        if (parts.length < 3) {
+            return new HttpResponse.Builder()
+                    .status(400, "Bad Request")
+                    .header("Content-Type", "text/plain")
+                    .body("Invalid delete request path. Expected format: /delete/{id}")
+                    .build();
+        }
+
+        String id = parts[2];
+        boolean success = dataStorage.delete(id);
+        if (success) {
+            return new HttpResponse.Builder()
+                    .status(200, "OK")
+                    .header("Content-Type", "text/plain")
+                    .body("Data deleted successfully.")
+                    .build();
+        } else {
+            return new HttpResponse.Builder()
+                    .status(404, "Not Found")
+                    .header("Content-Type", "text/plain")
+                    .body("Data not found or deletion failed.")
+                    .build();
+        }
+    }
+    
+    /**
      * Handles unsupported HTTP methods
      */
     private HttpResponse handleUnsupportedMethod() {
         return new HttpResponse.Builder()
                 .status(405, "Method Not Allowed")
-                .header("Allow", "GET, POST")
+                .header("Allow", "GET, POST, PUT, DELETE")
                 .body("Method not supported.")
                 .build();
     }

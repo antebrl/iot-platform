@@ -10,6 +10,8 @@ import org.example.CreateResponse;
 import org.example.SensorDataRequest;
 import org.example.SensorDataStored;
 import org.example.SensorDataStoredList;
+import org.example.UpdateRequest;
+import org.example.DeleteRequest;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -33,13 +35,19 @@ public class GrpcDatabaseClient {
         return stub.read(key);
     }
 
-    public Response update(SensorDataStored dataStored) {
-        return stub.update(dataStored);
+    public CreateResponse update(String id, SensorDataRequest updatedData) {
+        UpdateRequest request = UpdateRequest.newBuilder()
+                .setId(id)
+                .setUpdatedData(updatedData)
+                .build();
+        return stub.update(request);
     }
 
-    public Response delete(String id) {
-        Key key = Key.newBuilder().setId(id).build();
-        return stub.delete(key);
+    public CreateResponse delete(String id) {
+        DeleteRequest request = DeleteRequest.newBuilder()
+                .setId(id)
+                .build();
+        return stub.delete(request);
     }
 
     public SensorDataStoredList readAll() {

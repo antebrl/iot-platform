@@ -11,6 +11,8 @@ import org.example.CreateResponse;
 import org.example.SensorDataRequest;
 import org.example.SensorDataStored;
 import org.example.SensorDataStoredList;
+import org.example.UpdateRequest;
+import org.example.DeleteRequest;
 
 public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImplBase {
 
@@ -46,19 +48,52 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
     }
 
     @Override
-    public void update(SensorDataStored request, StreamObserver<Response> responseObserver) {
+    public void update(UpdateRequest request, StreamObserver<CreateResponse> responseObserver) {
         String id = request.getId();
-        // Only update if the entry exists
-        boolean updated = db.replace(id, request) != null;
-        sendResponse(responseObserver, updated,
-                updated ? "Entry updated." : "Entry not found.");
+        SensorDataRequest updatedDataRequest = request.getUpdatedData();
+
+        // Check if the entry exists
+        if (db.containsKey(id)) {
+            SensorDataStored updatedDataStored = SensorDataStored.newBuilder()
+                    .setId(id) // Keep the existing ID
+                    .setSensorId(updatedDataRequest.getSensorId())
+                    .setTemperature(updatedDataRequest.getTemperature())
+                    .build();
+            db.put(id, updatedDataStored); // Replace the old entry
+
+            CreateResponse response = CreateResponse.newBuilder()
+                    .setId(id)
+                    .setSuccess(true)
+                    .setMessage("Entry updated with ID: " + id)
+                    .build();
+            responseObserver.onNext(response);
+        } else {
+            CreateResponse response = CreateResponse.newBuilder()
+                    .setId(id)
+                    .setSuccess(false)
+                    .setMessage("Entry with ID: " + id + " not found.")
+                    .build();
+            responseObserver.onNext(response);
+        }
+        responseObserver.onCompleted();
     }
 
     @Override
-    public void delete(Key request, StreamObserver<Response> responseObserver) {
-        boolean removed = db.remove(request.getId()) != null;
-        sendResponse(responseObserver, removed,
-                removed ? "Entry deleted." : "Entry not found.");
+    public void delete(DeleteRequest request, StreamObserver<CreateResponse> responseObserver) {
+        String id = request.getId();
+        SensorDataStored removedData = db.remove(id);
+
+        boolean removed = removedData != null;
+        String message = removed ? "Entry deleted with ID: " + id : "Entry with ID: " + id + " not found.";
+
+        CreateResponse response = CreateResponse.newBuilder()
+                .setId(id)
+                .setSuccess(removed)
+                .setMessage(message)
+                .build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 
     @Override
@@ -67,10 +102,5 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
         db.values().forEach(listBuilder::addEntries);
         responseObserver.onNext(listBuilder.build());
         responseObserver.onCompleted();
-    }
-
-    private void sendResponse(StreamObserver<Response> obs, boolean ok, String msg) {
-        obs.onNext(Response.newBuilder().setSuccess(ok).setMessage(msg).build());
-        obs.onCompleted();
     }
 }

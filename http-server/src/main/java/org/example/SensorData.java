@@ -4,10 +4,15 @@ package org.example;
  * Represents sensor data with ID and temperature reading for HTTP and InMemory storage.
  */
 public class SensorData {
+    private String id;
     private int sensorId;
     private double temperature;
 
+    // Private Konstruktoren, erzwingt Nutzung des Builders
+    private SensorData() {}
+
     // Getters
+    public String getId() { return id; }
     public int getSensorId() { return sensorId; }
     public double getTemperature() { return temperature; }
 
@@ -17,6 +22,41 @@ public class SensorData {
 
     @Override
     public String toString() {
-        return "Sensor ID: " + sensorId + ", Temperatur: " + temperature;
+        return "ID: " + id + ", Sensor ID: " + sensorId + ", Temperatur: " + temperature;
+    }
+
+    // Builder Klasse
+    public static class Builder {
+        private String id;
+        private int sensorId;
+        private double temperature;
+
+        public Builder id(String id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder sensorId(int sensorId) {
+            this.sensorId = sensorId;
+            return this;
+        }
+
+        public Builder temperature(double temperature) {
+            this.temperature = temperature;
+            return this;
+        }
+
+        public SensorData build() {
+            SensorData data = new SensorData();
+            data.id = this.id;
+            data.sensorId = this.sensorId;
+            data.temperature = this.temperature;
+            return data;
+        }
+    }
+
+    // Statische Methode, um Builder zu erhalten
+    public static Builder builder() {
+        return new Builder();
     }
 } 

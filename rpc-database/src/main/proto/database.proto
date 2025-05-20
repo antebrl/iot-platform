@@ -7,8 +7,8 @@ option java_multiple_files = true;
 service DatabaseService {
   rpc Create (SensorDataRequest) returns (CreateResponse);
   rpc Read   (Key)       returns (SensorDataStored);
-  rpc Update (SensorDataStored) returns (Response);
-  rpc Delete (Key)       returns (Response);
+  rpc Update (UpdateRequest) returns (CreateResponse);
+  rpc Delete (DeleteRequest) returns (CreateResponse);
   rpc ReadAll (Empty) returns (SensorDataStoredList);
 }
 
@@ -43,3 +43,12 @@ message SensorDataStoredList {
 }
 
 message Empty {}
+
+message UpdateRequest {
+  string id = 1;
+  SensorDataRequest updated_data = 2;
+}
+
+message DeleteRequest {
+  string id = 1;
+}

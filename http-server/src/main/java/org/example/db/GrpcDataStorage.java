@@ -6,7 +6,6 @@ import org.example.SensorDataRequest;
 import org.example.SensorDataStored;
 import org.example.SensorDataStoredList;
 import org.example.CreateResponse;
-import org.example.Response;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -32,28 +31,40 @@ public class GrpcDataStorage implements DataStorage {
     public String read(String id) {
         SensorDataStored dataStored = grpcClient.read(id);
         if (dataStored != null && !dataStored.getId().isEmpty()) {
-            // Konvertiere SensorDataStored zu JSON
-            return gson.toJson(dataStored);
+            try {
+                org.example.SensorData data = org.example.SensorData.builder()
+                        .id(dataStored.getId())
+                        .sensorId(dataStored.getSensorId())
+                        .temperature(Double.parseDouble(dataStored.getTemperature()))
+                        .build();
+                return gson.toJson(data);
+            } catch (NumberFormatException e) {
+                System.err.println("Error parsing temperature from gRPC data in read: " + e.getMessage());
+                return null;
+            }
         }
         return null;
     }
 
     @Override
     public boolean update(SensorData data) {
-         // Für Update benötigen wir die ID des Eintrags. Da der HTTP-Server nur SensorData sendet
-         // und die ID von der Datenbank generiert wird, können wir hier kein direktes Update
-         // basierend auf der lokalen SensorData durchführen.
-         // Eine mögliche Lösung wäre, dass der HTTP-Server die ID im Update-Request mitsendet
-         // oder dass wir hier erst einen Read per sensorId implementieren, um die ID zu finden.
+         if (data.getId() == null || data.getId().isEmpty()) {
+             System.err.println("Update failed: SensorData object is missing ID.");
+             return false;
+         }
 
-         // Vorerst: Rückgabe false, da Update per SensorData nicht direkt im aktuellen Schema/Implementierung passt.
-         System.err.println("Update by SensorData not directly supported. Needs ID.");
-         return false;
+         SensorDataRequest updatedDataRequest = SensorDataRequest.newBuilder()
+                 .setSensorId(data.getSensorId())
+                 .setTemperature(String.valueOf(data.getTemperature()))
+                 .build();
+
+         CreateResponse response = grpcClient.update(data.getId(), updatedDataRequest);
+         return response.getSuccess();
     }
 
     @Override
     public boolean delete(String id) {
-        Response response = grpcClient.delete(id);
+        CreateResponse response = grpcClient.delete(id);
         return response.getSuccess();
     }
 
@@ -61,6 +72,22 @@ public class GrpcDataStorage implements DataStorage {
     public String readAll() {
         SensorDataStoredList response = grpcClient.readAll();
         List<SensorDataStored> entries = response.getEntriesList();
-        return gson.toJson(entries);
+        List<org.example.SensorData> sensorDataList = new java.util.ArrayList<>();
+
+        for (SensorDataStored entry : entries) {
+            try {
+                org.example.SensorData data = org.example.SensorData.builder()
+                        .id(entry.getId())
+                        .sensorId(entry.getSensorId())
+                        .temperature(Double.parseDouble(entry.getTemperature()))
+                        .build();
+                sensorDataList.add(data);
+            } catch (NumberFormatException e) {
+                System.err.println("Error parsing temperature from gRPC data in readAll: " + e.getMessage());
+                // Fehlerhaften Eintrag überspringen oder loggen
+            }
+        }
+
+        return gson.toJson(sensorDataList);
     }
 } 

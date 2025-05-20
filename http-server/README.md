@@ -25,6 +25,16 @@ curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d "{\"se
 curl http://localhost:8080
 ```
 
+`UPDATE` to update a specific sensor data entry:
+```bash
+curl -X PUT -H "Content-Type: application/json" -d '{"id": "some-uuid", "sensorId": 1, "temperature": 26.0}' http://localhost:8080/
+```
+
+`DELETE REQUEST` to delete a sensor data entry:
+```bash
+curl -X DELETE http://localhost:8080/delete/some-uuid
+```
+
 ## Testing
 
 ### Running Tests

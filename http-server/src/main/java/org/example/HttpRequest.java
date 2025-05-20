@@ -10,17 +10,23 @@ import java.util.Map;
  */
 public class HttpRequest {
     private final String method;
+    private final String path;
     private final Map<String, String> headers;
     private final String body;
     
-    public HttpRequest(String method, Map<String, String> headers, String body) {
+    public HttpRequest(String method, String path, Map<String, String> headers, String body) {
         this.method = method;
+        this.path = path;
         this.headers = headers;
         this.body = body;
     }
     
     public String getMethod() {
         return method;
+    }
+    
+    public String getPath() {
+        return path;
     }
     
     public Map<String, String> getHeaders() {
@@ -38,16 +44,20 @@ public class HttpRequest {
         String requestLine = in.readLine();
         if (requestLine == null || requestLine.isEmpty()) return null;
 
-        String method = requestLine.split(" ")[0];
+        String[] requestParts = requestLine.split(" ", 3);
+        if (requestParts.length < 3) return null;
+        
+        String method = requestParts[0];
+        String path = requestParts[1];
         Map<String, String> headers = readHeaders(in);
         String body = null;
         
-        if (method.equalsIgnoreCase("POST")) {
+        if (method.equalsIgnoreCase("POST") || method.equalsIgnoreCase("PUT")) {
             int contentLength = Integer.parseInt(headers.getOrDefault("content-length", "0"));
             body = readBody(in, contentLength);
         }
         
-        return new HttpRequest(method, headers, body);
+        return new HttpRequest(method, path, headers, body);
     }
     
     /**
