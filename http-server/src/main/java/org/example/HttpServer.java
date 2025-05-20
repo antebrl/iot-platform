@@ -27,7 +27,7 @@ public class HttpServer {
     private final Gson gson = new Gson();
 
     public HttpServer() {
-        this(DEFAULT_PORT, new GrpcDataStorage("localhost", 50051));
+        this(DEFAULT_PORT, new InMemoryDataStorage()); //new GrpcDataStorage("localhost", 50051)
     }
     
     public HttpServer(int port, DataStorage dataStorage) {
