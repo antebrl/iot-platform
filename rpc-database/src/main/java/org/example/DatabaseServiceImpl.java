@@ -4,6 +4,8 @@ import io.grpc.stub.StreamObserver;
 import java.util.concurrent.ConcurrentHashMap;
 import org.example.DatabaseServiceGrpc;
 import org.example.DataEntry;
+import org.example.DataEntryList;
+import org.example.Empty;
 import org.example.Key;
 import org.example.Response;
 
@@ -40,6 +42,16 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
         boolean removed = db.remove(request.getId()) != null;
         sendResponse(responseObserver, removed,
                 removed ? "Entry deleted." : "Entry not found.");
+    }
+
+    @Override
+    public void readAll(Empty request, StreamObserver<DataEntryList> responseObserver) {
+        DataEntryList.Builder listBuilder = DataEntryList.newBuilder();
+        db.forEach((id, value) -> listBuilder.addEntries(
+            DataEntry.newBuilder().setId(id).setValue(value).build()
+        ));
+        responseObserver.onNext(listBuilder.build());
+        responseObserver.onCompleted();
     }
 
     private void sendResponse(StreamObserver<Response> obs, boolean ok, String msg) {

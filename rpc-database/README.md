@@ -5,7 +5,7 @@ mvn clean compile
 ## Run standalone
 ```bash
 cd rpc-database
-mvn clean package        # generiert Protobuf- & gRPC-Klassen
+mvn clean package        # generate Protobuf- & gRPC-Classes
 java -jar target/rpc-database-1.0-SNAPSHOT.jar 
 ```
 

@@ -6,6 +6,10 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import org.example.db.DataStorage;
+import org.example.db.InMemoryDataStorage;
+import org.example.db.GrpcDataStorage;
+
 /**
  * A simple HTTP server that handles GET and POST requests for sensor data.
  * The server stores sensor data in memory and can return it when requested.
@@ -20,7 +24,7 @@ public class HttpServer {
     private Thread serverThread;
 
     public HttpServer() {
-        this(DEFAULT_PORT, new DataStorage());
+        this(DEFAULT_PORT, new InMemoryDataStorage());
     }
     
     public HttpServer(int port, DataStorage dataStorage) {
@@ -122,12 +126,21 @@ public class HttpServer {
      */
     private HttpResponse handlePostRequest(String jsonBody) {
         try {
-            dataStorage.addFromJson(jsonBody);
-            return new HttpResponse.Builder()
-                    .status(200, "OK")
-                    .header("Content-Type", "text/plain")
-                    .body("Data received.")
-                    .build();
+            SensorData data = new com.google.gson.Gson().fromJson(jsonBody, SensorData.class);
+            boolean success = dataStorage.create(data);
+            if (success) {
+                return new HttpResponse.Builder()
+                        .status(200, "OK")
+                        .header("Content-Type", "text/plain")
+                        .body("Data received.")
+                        .build();
+            } else {
+                return new HttpResponse.Builder()
+                        .status(500, "Internal Server Error")
+                        .header("Content-Type", "text/plain")
+                        .body("Failed to create data.")
+                        .build();
+            }
         } catch (JsonSyntaxException e) {
             return new HttpResponse.Builder()
                     .status(400, "Bad Request")
@@ -141,7 +154,7 @@ public class HttpServer {
      * Handles GET requests by returning all data as JSON
      */
     private HttpResponse handleGetRequest() {
-        String responseBody = dataStorage.asJson();
+        String responseBody = dataStorage.readAll();
         return new HttpResponse.Builder()
                 .status(200, "OK")
                 .header("Content-Type", "application/json")
