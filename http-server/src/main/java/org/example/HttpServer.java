@@ -1,6 +1,7 @@
 package org.example;
 
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.Gson;
 
 import java.io.*;
 import java.net.*;
@@ -9,6 +10,7 @@ import java.util.*;
 import org.example.db.DataStorage;
 import org.example.db.InMemoryDataStorage;
 import org.example.db.GrpcDataStorage;
+import org.example.SensorData;
 
 /**
  * A simple HTTP server that handles GET and POST requests for sensor data.
@@ -22,9 +24,10 @@ public class HttpServer {
     private ServerSocket serverSocket;
     private boolean running = false;
     private Thread serverThread;
+    private final Gson gson = new Gson();
 
     public HttpServer() {
-        this(DEFAULT_PORT, new InMemoryDataStorage());
+        this(DEFAULT_PORT, new GrpcDataStorage("localhost", 50051));
     }
     
     public HttpServer(int port, DataStorage dataStorage) {
@@ -126,7 +129,7 @@ public class HttpServer {
      */
     private HttpResponse handlePostRequest(String jsonBody) {
         try {
-            SensorData data = new com.google.gson.Gson().fromJson(jsonBody, SensorData.class);
+            SensorData data = gson.fromJson(jsonBody, SensorData.class);
             boolean success = dataStorage.create(data);
             if (success) {
                 return new HttpResponse.Builder()

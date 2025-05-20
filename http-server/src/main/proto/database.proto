@@ -5,20 +5,20 @@ option java_package = "org.example";
 option java_multiple_files = true;
 
 service DatabaseService {
-  rpc Create (DataEntry) returns (Response);
-  rpc Read   (Key)       returns (DataEntry);
-  rpc Update (DataEntry) returns (Response);
+  rpc Create (SensorDataProto) returns (CreateResponse);
+  rpc Read   (Key)       returns (SensorDataWithId);
+  rpc Update (SensorDataWithId) returns (Response);
   rpc Delete (Key)       returns (Response);
-  rpc ReadAll (Empty)    returns (DataEntryList);
+  rpc ReadAll (Empty) returns (SensorDataWithIdList);
 }
 
 message Key {
   string id = 1;
 }
 
-message DataEntry {
-  string id    = 1;
-  string value = 2;
+message SensorDataProto {
+  string value = 1; // Hier speichern wir die Temperatur
+  // int32 sensorId = 2; // sensorId wird Teil der ID in SensorDataWithId
 }
 
 message Response {
@@ -26,8 +26,19 @@ message Response {
   string message = 2;
 }
 
-message DataEntryList {
-  repeated DataEntry entries = 1;
+message CreateResponse {
+  string id = 1;
+  bool   success = 2;
+  string message = 3;
+}
+
+message SensorDataWithId {
+  string id = 1;
+  SensorDataProto data = 2;
+}
+
+message SensorDataWithIdList {
+  repeated SensorDataWithId entries = 1;
 }
 
 message Empty {}

@@ -10,7 +10,7 @@ public class InMemoryDataStorage implements DataStorage {
     private final Gson gson = new Gson();
 
     @Override
-    public synchronized boolean create(SensorData data) {
+    public synchronized boolean create(org.example.SensorData data) {
         entries.add(data);
         return true;
     }
@@ -26,7 +26,7 @@ public class InMemoryDataStorage implements DataStorage {
     }
 
     @Override
-    public synchronized boolean update(SensorData data) {
+    public synchronized boolean update(org.example.SensorData data) {
         for (int i = 0; i < entries.size(); i++) {
             if (entries.get(i).getSensorId() == data.getSensorId()) {
                 entries.set(i, data);
