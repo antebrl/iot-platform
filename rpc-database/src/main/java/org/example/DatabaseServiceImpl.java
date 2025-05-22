@@ -20,6 +20,20 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
 
     @Override
     public void create(SensorDataRequest request, StreamObserver<CreateResponse> responseObserver) {
+
+        // Prüfe auf leere Temperatur
+        if (request.getTemperature() == null || request.getTemperature().trim().isEmpty()) {
+            CreateResponse response = CreateResponse.newBuilder()
+                    .setId("")
+                    .setSuccess(false)
+                    .setMessage("Temperature must not be empty.")
+                    .build();
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+            return;
+        }
+
+        // Wenn gültig, fahre wie gewohnt fort
         String id = UUID.randomUUID().toString();
         SensorDataStored dataToStore = SensorDataStored.newBuilder()
                 .setId(id)
