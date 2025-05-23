@@ -17,6 +17,7 @@ public class DatabaseServiceImplTest {
     private StreamObserver<SensorDataStored> readObserver;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     public void setup() {
         service = new DatabaseServiceImpl();
         createObserver = mock(StreamObserver.class);
@@ -50,6 +51,7 @@ public class DatabaseServiceImplTest {
                 .setTemperature("30.0")
                 .build();
 
+        @SuppressWarnings("unchecked")
         StreamObserver<CreateResponse> dummyObserver = mock(StreamObserver.class);
         ArgumentCaptor<CreateResponse> createCaptor = ArgumentCaptor.forClass(CreateResponse.class);
 
@@ -78,6 +80,7 @@ public class DatabaseServiceImplTest {
                 .setSensorId(1)
                 .setTemperature("20.0")
                 .build();
+        @SuppressWarnings("unchecked")
         StreamObserver<CreateResponse> dummyCreateObserver = mock(StreamObserver.class);
         ArgumentCaptor<CreateResponse> createCaptor = ArgumentCaptor.forClass(CreateResponse.class);
 
@@ -94,6 +97,7 @@ public class DatabaseServiceImplTest {
                 .setUpdatedData(updatedData)
                 .build();
 
+        @SuppressWarnings("unchecked")
         StreamObserver<CreateResponse> updateObserver = mock(StreamObserver.class);
         ArgumentCaptor<CreateResponse> updateCaptor = ArgumentCaptor.forClass(CreateResponse.class);
 
@@ -117,6 +121,7 @@ public class DatabaseServiceImplTest {
                         .build())
                 .build();
 
+        @SuppressWarnings("unchecked")
         StreamObserver<CreateResponse> updateObserver = mock(StreamObserver.class);
         ArgumentCaptor<CreateResponse> captor = ArgumentCaptor.forClass(CreateResponse.class);
 

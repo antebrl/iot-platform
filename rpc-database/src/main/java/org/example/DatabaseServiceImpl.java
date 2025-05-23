@@ -3,14 +3,6 @@ package org.example;
 import io.grpc.stub.StreamObserver;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
-import org.example.DatabaseServiceGrpc;
-import org.example.Empty;
-import org.example.Key;
-import org.example.Response;
-import org.example.CreateResponse;
-import org.example.SensorDataRequest;
-import org.example.SensorDataStored;
-import org.example.SensorDataStoredList;
 import org.example.UpdateRequest;
 import org.example.DeleteRequest;
 

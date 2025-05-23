@@ -7,15 +7,7 @@ import io.grpc.ManagedChannel;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.example.DatabaseServiceGrpc;
-import org.example.SensorDataRequest;
-import org.example.CreateResponse;
-import org.example.Key;
-import org.example.SensorDataStored;
-import org.example.UpdateRequest;
-import org.example.DeleteRequest;
-import org.example.Empty;
-import org.example.SensorDataStoredList;
+
 
 import java.io.IOException;
 
