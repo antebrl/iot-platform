@@ -1,5 +1,55 @@
-version: '3.3'
+version: '3.8'
+
 services:
+  http-server:
+    build:
+      context: ./http-server
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.70'
+          memory: 1G
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - frontend
+      - backend
+    labels:
+      - "com.example.description=HTTP Server Service"
+      - "com.example.team=TeamA"
+
+  rpc-database:
+    build:
+      context: ./rpc-database
+    ports:
+      - "50051:50051"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+          memory: 2G
+    volumes:
+      - rpc-data:/var/lib/rpc-database
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 50051 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - backend
+    labels:
+      - "com.example.description=RPC Database Service"
+      - "com.example.team=TeamA"
+
   iot-gateway:
     build:
       context: ./iot-gateway
@@ -7,12 +57,17 @@ services:
       - HTTP_SERVER_HOST=http-server
     depends_on:
       - http-server
-
-  http-server:
-    build:
-      context: ./http-server
-    ports:
-      - "8080:8080"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    networks:
+      - backend
+    labels:
+      - "com.example.description=IoT Gateway Service"
+      - "com.example.team=TeamA"
 
   frontend:
     build:
@@ -23,11 +78,31 @@ services:
       - http-server
     environment:
       - VITE_API_URL=http://http-server:8080
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.30'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - frontend
+    labels:
+      - "com.example.description=Frontend Service"
+      - "com.example.team=TeamA"
 
-  rpc-database:
-    build:
-      context: ./rpc-database
-    ports:
-      - "50051:50051"
-    depends_on:
-      - http-server
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true
+
+volumes:
+  rpc-data:
+    driver: local

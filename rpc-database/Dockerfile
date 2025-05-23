@@ -17,7 +17,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Zweite Stage: Runtime
-FROM eclipse-temurin:23-jre-jammy
+FROM eclipse-temurin:23-jre
 
 # Setze Arbeitsverzeichnis
 WORKDIR /app
