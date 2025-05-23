@@ -57,6 +57,9 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
         SensorDataStored data = db.get(request.getId());
         if (data != null) {
             responseObserver.onNext(data);
+        } else {
+            // Wenn kein Datensatz gefunden wurde, gib ein leeres SensorDataStored-Objekt zurück
+            responseObserver.onNext(SensorDataStored.newBuilder().build());
         }
         responseObserver.onCompleted();
     }

@@ -134,12 +134,15 @@ public class DatabaseServiceImplTest {
     public void testRead_nonExistingId() {
         String fakeId = UUID.randomUUID().toString();
         Key key = Key.newBuilder().setId(fakeId).build();
+        ArgumentCaptor<SensorDataStored> readCaptor = ArgumentCaptor.forClass(SensorDataStored.class);
 
         service.read(key, readObserver);
 
-        // Je nach Implementierung entweder nichts zurück (kein onNext), oder Fehler
-        verify(readObserver, never()).onNext(any());
+        verify(readObserver).onNext(readCaptor.capture());
         verify(readObserver).onCompleted();
+
+        SensorDataStored result = readCaptor.getValue();
+        assertTrue(result.getId().isEmpty());
     }
 
     @Test
@@ -157,7 +160,7 @@ public class DatabaseServiceImplTest {
         verify(createObserver).onCompleted();
 
         CreateResponse response = captor.getValue();
-        assertFalse(response.getSuccess());  // <--- Änderung hier
+        assertFalse(response.getSuccess());
         assertEquals("Temperature must not be empty.", response.getMessage());
         assertEquals("", response.getId());
     }
