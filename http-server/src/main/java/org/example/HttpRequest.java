@@ -38,6 +38,40 @@ public class HttpRequest {
     }
     
     /**
+     * Checks if the path matches a given regex pattern
+     */
+    public boolean matchesPath(String pattern) {
+        return path.matches(pattern);
+    }
+      /**
+     * Extracts a path parameter from the URL path
+     * @param basePattern The base pattern (e.g., "/api/data/")
+     * @param segmentIndex The index of the segment to extract (0-based after the base pattern)
+     * @return The extracted parameter or null if not found
+     */
+    public String extractPathParameter(String basePattern, int segmentIndex) {
+        if (path.startsWith(basePattern)) {
+            String remainingPath = path.substring(basePattern.length());
+            // Remove leading slash if present
+            if (remainingPath.startsWith("/")) {
+                remainingPath = remainingPath.substring(1);
+            }
+            String[] segments = remainingPath.split("/");
+            // Filter out empty segments
+            java.util.List<String> nonEmptySegments = new java.util.ArrayList<>();
+            for (String segment : segments) {
+                if (!segment.isEmpty()) {
+                    nonEmptySegments.add(segment);
+                }
+            }
+            if (nonEmptySegments.size() > segmentIndex) {
+                return nonEmptySegments.get(segmentIndex);
+            }
+        }
+        return null;
+    }
+    
+    /**
      * Parses an HTTP request from the input reader
      */
     public static HttpRequest parse(BufferedReader in) throws IOException {

@@ -110,25 +110,46 @@ public class HttpServer {
             e.printStackTrace();
         }
     }
-    
-    /**
+      /**
      * Processes the parsed request and returns an appropriate response
      */
     private HttpResponse processRequest(HttpRequest request) {
         String method = request.getMethod().toUpperCase();
+        String path = request.getPath();
+        
         switch (method) {
             case "POST":
                 System.out.println("POST request received.");
                 return handlePostRequest(request.getBody());
             case "GET":
                 System.out.println("GET request received.");
-                return handleGetRequest();
-            case "PUT":
+                return handleGetRequest();            case "PUT":
                 System.out.println("PUT request received.");
-                return handlePutRequest(request.getBody());
-            case "DELETE":
+                // Check if path matches RESTful pattern /api/data/{uuid}
+                if (request.matchesPath("/api/data/.*")) {
+                    String uuid = request.extractPathParameter("/api/data/", 0);
+                    if (uuid != null && !uuid.isEmpty()) {
+                        return handlePutRequest(request.getBody(), uuid);
+                    }
+                }
+                return new HttpResponse.Builder()
+                        .status(400, "Bad Request")
+                        .header("Content-Type", "text/plain")
+                        .body("Invalid PUT request path. Expected format: /api/data/{uuid}")
+                        .build();            case "DELETE":
                 System.out.println("DELETE request received.");
-                return handleDeleteRequest(request.getPath());
+                // Check if path matches RESTful pattern /api/data/{uuid}
+                if (request.matchesPath("/api/data/.*")) {
+                    String uuid = request.extractPathParameter("/api/data/", 0);
+                    if (uuid != null && !uuid.isEmpty()) {
+                        return handleDeleteRequest(uuid);
+                    }
+                }
+                return new HttpResponse.Builder()
+                        .status(400, "Bad Request")
+                        .header("Content-Type", "text/plain")
+                        .body("Invalid DELETE request path. Expected format: /api/data/{uuid}")
+                        .build();
             default:
                 return handleUnsupportedMethod();
         }
@@ -176,18 +197,26 @@ public class HttpServer {
                 .body(responseBody)
                 .build();
     }
-    
-    /**
+      /**
      * Handles PUT requests for updating existing data
      */
-    private HttpResponse handlePutRequest(String jsonBody) {
+    private HttpResponse handlePutRequest(String jsonBody, String uuid) {
         try {
             SensorData data = gson.fromJson(jsonBody, SensorData.class);
+            
+            // Set the ID from the URL path if not present in the JSON body
             if (data.getId() == null || data.getId().isEmpty()) {
+                data = SensorData.builder()
+                        .id(uuid)
+                        .sensorId(data.getSensorId())
+                        .temperature(data.getTemperature())
+                        .build();
+            } else if (!data.getId().equals(uuid)) {
+                // ID in body doesn't match ID in URL
                 return new HttpResponse.Builder()
                         .status(400, "Bad Request")
                         .header("Content-Type", "text/plain")
-                        .body("Missing ID in update request.")
+                        .body("ID in request body does not match ID in URL path.")
                         .build();
             }
             
@@ -212,24 +241,11 @@ public class HttpServer {
                     .body("Invalid JSON: " + e.getMessage())
                     .build();
         }
-    }
-
-    /**
-     * Handles DELETE requests by extracting the ID from the path
+    }    /**
+     * Handles DELETE requests by using the provided UUID
      */
-    private HttpResponse handleDeleteRequest(String path) {
-        // Extract ID from path (e.g., /delete/123)
-        String[] parts = path.split("/");
-        if (parts.length < 3) {
-            return new HttpResponse.Builder()
-                    .status(400, "Bad Request")
-                    .header("Content-Type", "text/plain")
-                    .body("Invalid delete request path. Expected format: /delete/{id}")
-                    .build();
-        }
-
-        String id = parts[2];
-        boolean success = dataStorage.delete(id);
+    private HttpResponse handleDeleteRequest(String uuid) {
+        boolean success = dataStorage.delete(uuid);
         if (success) {
             return new HttpResponse.Builder()
                     .status(200, "OK")
