@@ -86,8 +86,18 @@ public class GrpcDataStorage implements DataStorage {
                 System.err.println("Error parsing temperature from gRPC data in readAll: " + e.getMessage());
                 // Fehlerhaften Eintrag überspringen oder loggen
             }
-        }
-
-        return gson.toJson(sensorDataList);
+        }        return gson.toJson(sensorDataList);
     }
-} 
+
+    @Override
+    public void clear() {
+        // Get all entries first
+        SensorDataStoredList response = grpcClient.readAll();
+        List<SensorDataStored> entries = response.getEntriesList();
+        
+        // Delete each entry individually
+        for (SensorDataStored entry : entries) {
+            grpcClient.delete(entry.getId());
+        }
+    }
+}

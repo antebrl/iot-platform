@@ -9,4 +9,5 @@ public interface DataStorage {
     boolean update(SensorData data);
     boolean delete(String id);
     String readAll();
-} 
+    void clear();
+}

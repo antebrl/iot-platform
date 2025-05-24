@@ -50,10 +50,13 @@ public class InMemoryDataStorage implements DataStorage {
     @Override
     public synchronized boolean delete(String id) {
         return entries.removeIf(d -> d.getId().equals(id));
-    }
-
-    @Override
+    }    @Override
     public synchronized String readAll() {
         return gson.toJson(entries);
     }
-} 
+
+    @Override
+    public synchronized void clear() {
+        entries.clear();
+    }
+}
