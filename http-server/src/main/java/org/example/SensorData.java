@@ -25,6 +25,36 @@ public class SensorData {
         return "ID: " + id + ", Sensor ID: " + sensorId + ", Temperatur: " + temperature;
     }
 
+    /**
+     * Creates a SensorData instance from a gRPC SensorDataStored object
+     */
+    public static SensorData fromGrpcStored(SensorDataStored grpcData) {
+        if (grpcData == null || grpcData.getId().isEmpty()) {
+            return null;
+        }
+        
+        try {
+            return SensorData.builder()
+                    .id(grpcData.getId())
+                    .sensorId(grpcData.getSensorId())
+                    .temperature(Double.parseDouble(grpcData.getTemperature()))
+                    .build();
+        } catch (NumberFormatException e) {
+            System.err.println("Error parsing temperature from gRPC data: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Converts this SensorData to a gRPC SensorDataRequest object
+     */
+    public SensorDataRequest toGrpcRequest() {
+        return SensorDataRequest.newBuilder()
+                .setSensorId(this.sensorId)
+                .setTemperature(String.valueOf(this.temperature))
+                .build();
+    }
+
     // Builder Klasse
     public static class Builder {
         private String id;
@@ -59,4 +89,4 @@ public class SensorData {
     public static Builder builder() {
         return new Builder();
     }
-} 
+}

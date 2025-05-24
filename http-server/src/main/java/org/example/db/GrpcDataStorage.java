@@ -8,6 +8,7 @@ import org.example.SensorDataStoredList;
 import org.example.Response;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class GrpcDataStorage implements DataStorage {
     private final GrpcDatabaseClient grpcClient;
@@ -19,10 +20,7 @@ public class GrpcDataStorage implements DataStorage {
 
     @Override
     public boolean create(SensorData data) {
-        SensorDataRequest request = SensorDataRequest.newBuilder()
-                .setSensorId(data.getSensorId())
-                .setTemperature(String.valueOf(data.getTemperature()))
-                .build();
+        SensorDataRequest request = data.toGrpcRequest();
         Response response = grpcClient.create(request);
         return response.getSuccess();
     }
@@ -30,20 +28,8 @@ public class GrpcDataStorage implements DataStorage {
     @Override
     public String read(String id) {
         SensorDataStored dataStored = grpcClient.read(id);
-        if (dataStored != null && !dataStored.getId().isEmpty()) {
-            try {
-                org.example.SensorData data = org.example.SensorData.builder()
-                        .id(dataStored.getId())
-                        .sensorId(dataStored.getSensorId())
-                        .temperature(Double.parseDouble(dataStored.getTemperature()))
-                        .build();
-                return gson.toJson(data);
-            } catch (NumberFormatException e) {
-                System.err.println("Error parsing temperature from gRPC data in read: " + e.getMessage());
-                return null;
-            }
-        }
-        return null;
+        SensorData data = SensorData.fromGrpcStored(dataStored);
+        return data != null ? gson.toJson(data) : null;
     }
 
     @Override
@@ -53,11 +39,7 @@ public class GrpcDataStorage implements DataStorage {
              return false;
          }
 
-         SensorDataRequest updatedDataRequest = SensorDataRequest.newBuilder()
-                 .setSensorId(data.getSensorId())
-                 .setTemperature(String.valueOf(data.getTemperature()))
-                 .build();
-
+         SensorDataRequest updatedDataRequest = data.toGrpcRequest();         
          Response response = grpcClient.update(data.getId(), updatedDataRequest);
          return response.getSuccess();
     }
@@ -72,21 +54,13 @@ public class GrpcDataStorage implements DataStorage {
     public String readAll() {
         SensorDataStoredList response = grpcClient.readAll();
         List<SensorDataStored> entries = response.getEntriesList();
-        List<org.example.SensorData> sensorDataList = new java.util.ArrayList<>();
-
-        for (SensorDataStored entry : entries) {
-            try {
-                org.example.SensorData data = org.example.SensorData.builder()
-                        .id(entry.getId())
-                        .sensorId(entry.getSensorId())
-                        .temperature(Double.parseDouble(entry.getTemperature()))
-                        .build();
-                sensorDataList.add(data);
-            } catch (NumberFormatException e) {
-                System.err.println("Error parsing temperature from gRPC data in readAll: " + e.getMessage());
-                // Fehlerhaften Eintrag überspringen oder loggen
-            }
-        }        return gson.toJson(sensorDataList);
+        
+        List<SensorData> sensorDataList = entries.stream()
+                .map(SensorData::fromGrpcStored)
+                .filter(data -> data != null)
+                .collect(Collectors.toList());
+        
+        return gson.toJson(sensorDataList);
     }
 
     @Override
