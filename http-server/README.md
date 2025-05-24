@@ -27,12 +27,12 @@ curl http://localhost:8080
 
 `UPDATE` to update a specific sensor data entry:
 ```bash
-curl -X PUT -H "Content-Type: application/json" -d "{\"sensorId\": 1, \"temperature\": 26.0}" http://localhost:8080/api/data/<id>
+curl -X PUT -H "Content-Type: application/json" -d "{\"sensorId\": 1, \"temperature\": 26.0}" http://localhost:8080/<id>
 ```
 
 `DELETE REQUEST` to delete a sensor data entry:
 ```bash
-curl -X DELETE http://localhost:8080/api/data/<id>
+curl -X DELETE http://localhost:8080/<id>
 ```
 
 ## Testing

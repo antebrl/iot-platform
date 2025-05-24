@@ -8,9 +8,7 @@ import java.util.UUID;
 
 public class InMemoryDataStorage implements DataStorage {
     private final List<SensorData> entries = new ArrayList<>();
-    private final Gson gson = new Gson();
-
-    @Override
+    private final Gson gson = new Gson();    @Override
     public synchronized boolean create(SensorData data) {
         // Create a new entry with a generated UUID
         SensorData newData = SensorData.builder()
