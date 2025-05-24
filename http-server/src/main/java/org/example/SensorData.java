@@ -8,7 +8,7 @@ public class SensorData {
     private int sensorId;
     private double temperature;
 
-    // Private Konstruktoren, erzwingt Nutzung des Builders
+    // Private constructor to enforce the use of the Builder
     private SensorData() {}
 
     // Getters

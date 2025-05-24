@@ -1,18 +1,18 @@
 package org.example;
 
 import io.grpc.stub.StreamObserver;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
-
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
 
 public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImplBase {
 
     private final ConcurrentHashMap<String, SensorDataStored> db = new ConcurrentHashMap<>();
+    private final List<String> insertionOrder = new CopyOnWriteArrayList<>();
 
     @Override
     public void create(SensorDataRequest request, StreamObserver<CreateResponse> responseObserver) {
-
-        // Prüfe auf leere Temperatur
         if (request.getTemperature() == null || request.getTemperature().trim().isEmpty()) {
             CreateResponse response = CreateResponse.newBuilder()
                     .setId("")
@@ -24,7 +24,6 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
             return;
         }
 
-        // Wenn gültig, fahre wie gewohnt fort
         String id = UUID.randomUUID().toString();
         SensorDataStored dataToStore = SensorDataStored.newBuilder()
                 .setId(id)
@@ -33,6 +32,9 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
                 .build();
 
         boolean inserted = db.putIfAbsent(id, dataToStore) == null;
+        if (inserted) {
+            insertionOrder.add(id);
+        }
 
         CreateResponse response = CreateResponse.newBuilder()
                 .setId(id)
@@ -49,7 +51,6 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
         if (data != null) {
             responseObserver.onNext(data);
         } else {
-            // Wenn kein Datensatz gefunden wurde, gib ein leeres SensorDataStored-Objekt zurück
             responseObserver.onNext(SensorDataStored.newBuilder().build());
         }
         responseObserver.onCompleted();
@@ -60,14 +61,13 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
         String id = request.getId();
         SensorDataRequest updatedDataRequest = request.getUpdatedData();
 
-        // Check if the entry exists
         if (db.containsKey(id)) {
             SensorDataStored updatedDataStored = SensorDataStored.newBuilder()
-                    .setId(id) // Keep the existing ID
+                    .setId(id)
                     .setSensorId(updatedDataRequest.getSensorId())
                     .setTemperature(updatedDataRequest.getTemperature())
                     .build();
-            db.put(id, updatedDataStored); // Replace the old entry
+            db.put(id, updatedDataStored);
 
             CreateResponse response = CreateResponse.newBuilder()
                     .setId(id)
@@ -92,6 +92,10 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
         SensorDataStored removedData = db.remove(id);
 
         boolean removed = removedData != null;
+        if (removed) {
+            insertionOrder.remove(id);
+        }
+
         String message = removed ? "Entry deleted with ID: " + id : "Entry with ID: " + id + " not found.";
 
         CreateResponse response = CreateResponse.newBuilder()
@@ -107,7 +111,12 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
     @Override
     public void readAll(Empty request, StreamObserver<SensorDataStoredList> responseObserver) {
         SensorDataStoredList.Builder listBuilder = SensorDataStoredList.newBuilder();
-        db.values().forEach(listBuilder::addEntries);
+        for (String id : insertionOrder) {
+            SensorDataStored entry = db.get(id);
+            if (entry != null) {
+                listBuilder.addEntries(entry);
+            }
+        }
         responseObserver.onNext(listBuilder.build());
         responseObserver.onCompleted();
     }
