@@ -27,7 +27,9 @@ public class HttpServer {
     private final Gson gson = new Gson();
 
     public HttpServer() {
-        this(DEFAULT_PORT, new GrpcDataStorage("localhost", 50051)); //new GrpcDataStorage("localhost", 50051)
+        String rpcHost = System.getenv().getOrDefault("RPC_DATABASE_HOST", "localhost");
+        this.port = DEFAULT_PORT;
+        this.dataStorage = new GrpcDataStorage(rpcHost, 50051);
     }
     
     public HttpServer(int port, DataStorage dataStorage) {
