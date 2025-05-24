@@ -5,7 +5,7 @@ import org.example.SensorData;
 import org.example.SensorDataRequest;
 import org.example.SensorDataStored;
 import org.example.SensorDataStoredList;
-import org.example.CreateResponse;
+import org.example.Response;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -23,7 +23,7 @@ public class GrpcDataStorage implements DataStorage {
                 .setSensorId(data.getSensorId())
                 .setTemperature(String.valueOf(data.getTemperature()))
                 .build();
-        CreateResponse response = grpcClient.create(request);
+        Response response = grpcClient.create(request);
         return response.getSuccess();
     }
 
@@ -58,13 +58,13 @@ public class GrpcDataStorage implements DataStorage {
                  .setTemperature(String.valueOf(data.getTemperature()))
                  .build();
 
-         CreateResponse response = grpcClient.update(data.getId(), updatedDataRequest);
+         Response response = grpcClient.update(data.getId(), updatedDataRequest);
          return response.getSuccess();
     }
 
     @Override
     public boolean delete(String id) {
-        CreateResponse response = grpcClient.delete(id);
+        Response response = grpcClient.delete(id);
         return response.getSuccess();
     }
 

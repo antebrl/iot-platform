@@ -12,9 +12,9 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
     private final List<String> insertionOrder = new CopyOnWriteArrayList<>();
 
     @Override
-    public void create(SensorDataRequest request, StreamObserver<CreateResponse> responseObserver) {
+    public void create(SensorDataRequest request, StreamObserver<Response> responseObserver) {
         if (request.getTemperature() == null || request.getTemperature().trim().isEmpty()) {
-            CreateResponse response = CreateResponse.newBuilder()
+            Response response = Response.newBuilder()
                     .setId("")
                     .setSuccess(false)
                     .setMessage("Temperature must not be empty.")
@@ -36,7 +36,7 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
             insertionOrder.add(id);
         }
 
-        CreateResponse response = CreateResponse.newBuilder()
+        Response response = Response.newBuilder()
                 .setId(id)
                 .setSuccess(inserted)
                 .setMessage(inserted ? "Entry created with ID: " + id : "Entry creation failed.")
@@ -57,7 +57,7 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
     }
 
     @Override
-    public void update(UpdateRequest request, StreamObserver<CreateResponse> responseObserver) {
+    public void update(UpdateRequest request, StreamObserver<Response> responseObserver) {
         String id = request.getId();
         SensorDataRequest updatedDataRequest = request.getUpdatedData();
 
@@ -69,14 +69,14 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
                     .build();
             db.put(id, updatedDataStored);
 
-            CreateResponse response = CreateResponse.newBuilder()
+            Response response = Response.newBuilder()
                     .setId(id)
                     .setSuccess(true)
                     .setMessage("Entry updated with ID: " + id)
                     .build();
             responseObserver.onNext(response);
         } else {
-            CreateResponse response = CreateResponse.newBuilder()
+            Response response = Response.newBuilder()
                     .setId(id)
                     .setSuccess(false)
                     .setMessage("Entry with ID: " + id + " not found.")
@@ -87,7 +87,7 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
     }
 
     @Override
-    public void delete(DeleteRequest request, StreamObserver<CreateResponse> responseObserver) {
+    public void delete(DeleteRequest request, StreamObserver<Response> responseObserver) {
         String id = request.getId();
         SensorDataStored removedData = db.remove(id);
 
@@ -98,7 +98,7 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
 
         String message = removed ? "Entry deleted with ID: " + id : "Entry with ID: " + id + " not found.";
 
-        CreateResponse response = CreateResponse.newBuilder()
+        Response response = Response.newBuilder()
                 .setId(id)
                 .setSuccess(removed)
                 .setMessage(message)

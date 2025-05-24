@@ -6,7 +6,6 @@ import org.example.DatabaseServiceGrpc;
 import org.example.Empty;
 import org.example.Key;
 import org.example.Response;
-import org.example.CreateResponse;
 import org.example.SensorDataRequest;
 import org.example.SensorDataStored;
 import org.example.SensorDataStoredList;
@@ -26,7 +25,7 @@ public class GrpcDatabaseClient {
         stub = DatabaseServiceGrpc.newBlockingStub(channel);
     }
 
-    public CreateResponse create(SensorDataRequest data) {
+    public Response create(SensorDataRequest data) {
         return stub.create(data);
     }
 
@@ -35,7 +34,7 @@ public class GrpcDatabaseClient {
         return stub.read(key);
     }
 
-    public CreateResponse update(String id, SensorDataRequest updatedData) {
+    public Response update(String id, SensorDataRequest updatedData) {
         UpdateRequest request = UpdateRequest.newBuilder()
                 .setId(id)
                 .setUpdatedData(updatedData)
@@ -43,7 +42,7 @@ public class GrpcDatabaseClient {
         return stub.update(request);
     }
 
-    public CreateResponse delete(String id) {
+    public Response delete(String id) {
         DeleteRequest request = DeleteRequest.newBuilder()
                 .setId(id)
                 .build();

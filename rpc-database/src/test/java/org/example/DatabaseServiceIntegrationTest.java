@@ -63,7 +63,7 @@ public class DatabaseServiceIntegrationTest {
                 .setTemperature("25.5")
                 .build();
 
-        CreateResponse response = blockingStub.create(request);
+        Response response = blockingStub.create(request);
 
         assertTrue("Create should be successful", response.getSuccess());
         assertFalse("ID should not be empty", response.getId().isEmpty());
@@ -79,7 +79,7 @@ public class DatabaseServiceIntegrationTest {
                 .setTemperature("")
                 .build();
 
-        CreateResponse response = blockingStub.create(request);
+        Response response = blockingStub.create(request);
 
         assertFalse("Create should fail", response.getSuccess());
         assertTrue("ID should be empty", response.getId().isEmpty());
@@ -95,9 +95,9 @@ public class DatabaseServiceIntegrationTest {
                 .setTemperature("23.7")
                 .build();
 
-        CreateResponse createResponse = blockingStub.create(createRequest);
-        assertTrue("Create should be successful", createResponse.getSuccess());
-        String createdId = createResponse.getId();
+        Response response = blockingStub.create(createRequest);
+        assertTrue("Create should be successful", response.getSuccess());
+        String createdId = response.getId();
 
         // Now read it back
         Key readKey = Key.newBuilder().setId(createdId).build();
@@ -128,8 +128,8 @@ public class DatabaseServiceIntegrationTest {
                 .setTemperature("20.0")
                 .build();
 
-        CreateResponse createResponse = blockingStub.create(createRequest);
-        String createdId = createResponse.getId();
+        Response response = blockingStub.create(createRequest);
+        String createdId = response.getId();
 
         // Update the entry
         SensorDataRequest updatedData = SensorDataRequest.newBuilder()
@@ -142,7 +142,7 @@ public class DatabaseServiceIntegrationTest {
                 .setUpdatedData(updatedData)
                 .build();
 
-        CreateResponse updateResponse = blockingStub.update(updateRequest);
+        Response updateResponse = blockingStub.update(updateRequest);
 
         assertTrue("Update should be successful", updateResponse.getSuccess());
         assertEquals("Update ID should match", createdId, updateResponse.getId());
@@ -170,7 +170,7 @@ public class DatabaseServiceIntegrationTest {
                 .setUpdatedData(updatedData)
                 .build();
 
-        CreateResponse updateResponse = blockingStub.update(updateRequest);
+        Response updateResponse = blockingStub.update(updateRequest);
 
         assertFalse("Update should fail for non-existent data", updateResponse.getSuccess());
         assertEquals("Update ID should match request", "non-existent-id", updateResponse.getId());
@@ -186,15 +186,15 @@ public class DatabaseServiceIntegrationTest {
                 .setTemperature("18.5")
                 .build();
 
-        CreateResponse createResponse = blockingStub.create(createRequest);
-        String createdId = createResponse.getId();
+        Response response = blockingStub.create(createRequest);
+        String createdId = response.getId();
 
         // Delete the entry
         DeleteRequest deleteRequest = DeleteRequest.newBuilder()
                 .setId(createdId)
                 .build();
 
-        CreateResponse deleteResponse = blockingStub.delete(deleteRequest);
+        Response deleteResponse = blockingStub.delete(deleteRequest);
 
         assertTrue("Delete should be successful", deleteResponse.getSuccess());
         assertEquals("Delete ID should match", createdId, deleteResponse.getId());
@@ -215,7 +215,7 @@ public class DatabaseServiceIntegrationTest {
                 .setId("non-existent-id")
                 .build();
 
-        CreateResponse deleteResponse = blockingStub.delete(deleteRequest);
+        Response deleteResponse = blockingStub.delete(deleteRequest);
 
         assertFalse("Delete should fail for non-existent data", deleteResponse.getSuccess());
         assertEquals("Delete ID should match request", "non-existent-id", deleteResponse.getId());
@@ -245,9 +245,9 @@ public class DatabaseServiceIntegrationTest {
                     .setTemperature(temperatures[i])
                     .build();
 
-            CreateResponse createResponse = blockingStub.create(createRequest);
-            createdIds[i] = createResponse.getId();
-            assertTrue("Create should be successful", createResponse.getSuccess());
+            Response response = blockingStub.create(createRequest);
+            createdIds[i] = response.getId();
+            assertTrue("Create should be successful", response.getSuccess());
         }
 
         // Read all entries
@@ -274,9 +274,9 @@ public class DatabaseServiceIntegrationTest {
                 .setSensorId(500)
                 .setTemperature("22.2")
                 .build();
-        CreateResponse createResponse = blockingStub.create(createRequest);
-        String id = createResponse.getId();
-        assertTrue("Create should be successful", createResponse.getSuccess());
+        Response response = blockingStub.create(createRequest);
+        String id = response.getId();
+        assertTrue("Create should be successful", response.getSuccess());
 
         // 2. Read
         Key readKey = Key.newBuilder().setId(id).build();
@@ -291,7 +291,7 @@ public class DatabaseServiceIntegrationTest {
                         .setTemperature("33.3")
                         .build())
                 .build();
-        CreateResponse updateResponse = blockingStub.update(updateRequest);
+        Response updateResponse = blockingStub.update(updateRequest);
         assertTrue("Update should be successful", updateResponse.getSuccess());
 
         // 4. Read again
@@ -301,7 +301,7 @@ public class DatabaseServiceIntegrationTest {
 
         // 5. Delete
         DeleteRequest deleteRequest = DeleteRequest.newBuilder().setId(id).build();
-        CreateResponse deleteResponse = blockingStub.delete(deleteRequest);
+        Response deleteResponse = blockingStub.delete(deleteRequest);
         assertTrue("Delete should be successful", deleteResponse.getSuccess());
 
         // 6. Read after delete
