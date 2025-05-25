@@ -29,7 +29,7 @@ public class HttpServer {
     public HttpServer() {
         String rpcHost = System.getenv().getOrDefault("RPC_DATABASE_HOST", "localhost");
         this.port = DEFAULT_PORT;
-        this.dataStorage = new InMemoryDataStorage();
+        this.dataStorage = new GrpcDataStorage(rpcHost, 50051);
     }
     
     public HttpServer(int port, DataStorage dataStorage) {
