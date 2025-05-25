@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package proto;
+option java_package = "org.example";
+option java_multiple_files = true;
+
+service DatabaseService {
+  rpc Create (SensorDataRequest) returns (Response);
+  rpc Read   (Key)       returns (SensorDataStored);
+  rpc Update (UpdateRequest) returns (Response);
+  rpc Delete (DeleteRequest) returns (Response);
+  rpc ReadAll (Empty) returns (SensorDataStoredList);
+}
+
+message Key {
+  string id = 1;
+}
+
+message SensorDataRequest {
+  int32 sensorId = 1;
+  string temperature = 2;
+}
+
+message SensorDataStored {
+  string id = 1;
+  int32 sensorId = 2;
+  string temperature = 3;
+}
+
+message Response {
+  string id = 1;
+  bool   success = 2;
+  string message = 3;
+}
+
+message SensorDataStoredList {
+  repeated SensorDataStored entries = 1;
+}
+
+message Empty {}
+
+message UpdateRequest {
+  string id = 1;
+  SensorDataRequest updated_data = 2;
+}
+
+message DeleteRequest {
+  string id = 1;
+}

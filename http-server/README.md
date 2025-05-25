@@ -17,12 +17,22 @@ In CMD:
 
 `POST REQUEST` to add a new sensor data point:
 ```bash
-curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d "{\"sensorId\":42,\"temperature\":23.5}"
+curl -X POST -H "Content-Type: application/json" -d "{\"sensorId\": 1, \"temperature\": 25.5}" http://localhost:8080/
 ```
 
 `GET REQUEST` to retrieve all sensor data points:
 ```bash
 curl http://localhost:8080
+```
+
+`UPDATE` to update a specific sensor data entry:
+```bash
+curl -X PUT -H "Content-Type: application/json" -d "{\"sensorId\": 1, \"temperature\": 26.0}" http://localhost:8080/<id>
+```
+
+`DELETE REQUEST` to delete a sensor data entry:
+```bash
+curl -X DELETE http://localhost:8080/<id>
 ```
 
 ## Testing

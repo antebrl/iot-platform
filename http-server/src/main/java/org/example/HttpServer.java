@@ -1,10 +1,16 @@
 package org.example;
 
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.Gson;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
+
+import org.example.db.DataStorage;
+import org.example.db.InMemoryDataStorage;
+import org.example.db.GrpcDataStorage;
+import org.example.SensorData;
 
 /**
  * A simple HTTP server that handles GET and POST requests for sensor data.
@@ -18,9 +24,12 @@ public class HttpServer {
     private ServerSocket serverSocket;
     private boolean running = false;
     private Thread serverThread;
+    private final Gson gson = new Gson();
 
     public HttpServer() {
-        this(DEFAULT_PORT, new DataStorage());
+        String rpcHost = System.getenv().getOrDefault("RPC_DATABASE_HOST", "localhost");
+        this.port = DEFAULT_PORT;
+        this.dataStorage = new GrpcDataStorage(rpcHost, 50051);
     }
     
     public HttpServer(int port, DataStorage dataStorage) {
@@ -100,20 +109,69 @@ public class HttpServer {
             sendErrorResponse(client, e);
             e.printStackTrace();
         }
-    }
-    
-    /**
+    }    /**
      * Processes the parsed request and returns an appropriate response
      */
     private HttpResponse processRequest(HttpRequest request) {
-        if (request.getMethod().equalsIgnoreCase("POST")) {
-            System.out.println("POST request received.");
-            return handlePostRequest(request.getBody());
-        } else if (request.getMethod().equalsIgnoreCase("GET")) {
-            System.out.println("GET request received.");
-            return handleGetRequest();
-        } else {
-            return handleUnsupportedMethod();
+        String method = request.getMethod().toUpperCase();
+        String path = request.getPath();
+        
+        switch (method) {
+            case "POST":
+                System.out.println("POST request received.");
+                // POST requests should go to root path /
+                if ("/".equals(path)) {
+                    return handlePostRequest(request.getBody());
+                } else {
+                    return new HttpResponse.Builder()
+                            .status(400, "Bad Request")
+                            .header("Content-Type", "text/plain")
+                            .body("Invalid POST request path. Expected format: /")
+                            .build();
+                }
+            case "GET":
+                System.out.println("GET request received.");
+                // GET requests can be to root path / or to /{id}
+                if ("/".equals(path)) {
+                    return handleGetRequest();
+                } else if (path.matches("^/[^/]+$")) { // Pattern: /{id}
+                    String uuid = path.substring(1); // Remove leading slash
+                    return handleGetSingleRequest(uuid);
+                } else {
+                    return new HttpResponse.Builder()
+                            .status(400, "Bad Request")
+                            .header("Content-Type", "text/plain")
+                            .body("Invalid GET request path. Expected format: / or /{id}")
+                            .build();
+                }
+            case "PUT":
+                System.out.println("PUT request received.");
+                // PUT requests should go to /{id}
+                if (path.matches("^/[^/]+$")) { // Pattern: /{id}
+                    String uuid = path.substring(1); // Remove leading slash
+                    return handlePutRequest(request.getBody(), uuid);
+                } else {
+                    return new HttpResponse.Builder()
+                            .status(400, "Bad Request")
+                            .header("Content-Type", "text/plain")
+                            .body("Invalid PUT request path. Expected format: /{id}")
+                            .build();
+                }
+            case "DELETE":
+                System.out.println("DELETE request received.");
+                // DELETE requests should go to /{id}
+                if (path.matches("^/[^/]+$")) { // Pattern: /{id}
+                    String uuid = path.substring(1); // Remove leading slash
+                    return handleDeleteRequest(uuid);
+                } else {
+                    return new HttpResponse.Builder()
+                            .status(400, "Bad Request")
+                            .header("Content-Type", "text/plain")
+                            .body("Invalid DELETE request path. Expected format: /{id}")
+                            .build();
+                }
+            default:
+                return handleUnsupportedMethod();
         }
     }
     
@@ -122,12 +180,21 @@ public class HttpServer {
      */
     private HttpResponse handlePostRequest(String jsonBody) {
         try {
-            dataStorage.addFromJson(jsonBody);
-            return new HttpResponse.Builder()
-                    .status(200, "OK")
-                    .header("Content-Type", "text/plain")
-                    .body("Data received.")
-                    .build();
+            SensorData data = gson.fromJson(jsonBody, SensorData.class);
+            boolean success = dataStorage.create(data);
+            if (success) {
+                return new HttpResponse.Builder()
+                        .status(200, "OK")
+                        .header("Content-Type", "text/plain")
+                        .body("Data received.")
+                        .build();
+            } else {
+                return new HttpResponse.Builder()
+                        .status(500, "Internal Server Error")
+                        .header("Content-Type", "text/plain")
+                        .body("Failed to create data.")
+                        .build();
+            }
         } catch (JsonSyntaxException e) {
             return new HttpResponse.Builder()
                     .status(400, "Bad Request")
@@ -141,7 +208,7 @@ public class HttpServer {
      * Handles GET requests by returning all data as JSON
      */
     private HttpResponse handleGetRequest() {
-        String responseBody = dataStorage.asJson();
+        String responseBody = dataStorage.readAll();
         return new HttpResponse.Builder()
                 .status(200, "OK")
                 .header("Content-Type", "application/json")
@@ -152,12 +219,98 @@ public class HttpServer {
     }
     
     /**
+     * Handles GET requests for a single item by ID
+     */
+    private HttpResponse handleGetSingleRequest(String uuid) {
+        String responseBody = dataStorage.read(uuid);
+        if (responseBody != null) {
+            return new HttpResponse.Builder()
+                    .status(200, "OK")
+                    .header("Content-Type", "application/json")
+                    .header("Access-Control-Allow-Origin", "*")
+                    .header("Access-Control-Allow-Methods", "GET")
+                    .body(responseBody)
+                    .build();
+        } else {
+            return new HttpResponse.Builder()
+                    .status(404, "Not Found")
+                    .header("Content-Type", "text/plain")
+                    .body("Data not found.")
+                    .build();
+        }
+    }
+    
+    /**
+     * Handles PUT requests for updating existing data
+     */
+    private HttpResponse handlePutRequest(String jsonBody, String uuid) {
+        try {
+            SensorData data = gson.fromJson(jsonBody, SensorData.class);
+            
+            // Set the ID from the URL path if not present in the JSON body
+            if (data.getId() == null || data.getId().isEmpty()) {
+                data = SensorData.builder()
+                        .id(uuid)
+                        .sensorId(data.getSensorId())
+                        .temperature(data.getTemperature())
+                        .build();
+            } else if (!data.getId().equals(uuid)) {
+                // ID in body doesn't match ID in URL
+                return new HttpResponse.Builder()
+                        .status(400, "Bad Request")
+                        .header("Content-Type", "text/plain")
+                        .body("ID in request body does not match ID in URL path.")
+                        .build();
+            }
+            
+            boolean success = dataStorage.update(data);
+            if (success) {
+                return new HttpResponse.Builder()
+                        .status(200, "OK")
+                        .header("Content-Type", "text/plain")
+                        .body("Data updated successfully.")
+                        .build();
+            } else {
+                return new HttpResponse.Builder()
+                        .status(404, "Not Found")
+                        .header("Content-Type", "text/plain")
+                        .body("Data not found or update failed.")
+                        .build();
+            }
+        } catch (JsonSyntaxException e) {
+            return new HttpResponse.Builder()
+                    .status(400, "Bad Request")
+                    .header("Content-Type", "text/plain")
+                    .body("Invalid JSON: " + e.getMessage())
+                    .build();
+        }
+    }    /**
+     * Handles DELETE requests by using the provided UUID
+     */
+    private HttpResponse handleDeleteRequest(String uuid) {
+        boolean success = dataStorage.delete(uuid);
+        if (success) {
+            return new HttpResponse.Builder()
+                    .status(200, "OK")
+                    .header("Content-Type", "text/plain")
+                    .body("Data deleted successfully.")
+                    .build();
+        } else {
+            return new HttpResponse.Builder()
+                    .status(404, "Not Found")
+                    .header("Content-Type", "text/plain")
+                    .body("Data not found or deletion failed.")
+                    .build();
+        }
+    }
+    
+    /**
      * Handles unsupported HTTP methods
      */
     private HttpResponse handleUnsupportedMethod() {
         return new HttpResponse.Builder()
                 .status(405, "Method Not Allowed")
-                .header("Allow", "GET, POST")
+                .header("Allow", "GET, POST, PUT, DELETE")
                 .body("Method not supported.")
                 .build();
     }
