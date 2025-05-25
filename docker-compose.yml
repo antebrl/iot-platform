@@ -25,10 +25,10 @@ services:
   #   depends_on:
   #     - http-server
 
-  frontend:
-    build:
-      context: ./frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - http-server
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #   ports:
+  #     - "80:80"
+  #   depends_on:
+  #     - http-server

@@ -13,7 +13,7 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
 
     @Override
     public void create(SensorDataRequest request, StreamObserver<Response> responseObserver) {
-        System.out.println("Received create request: " + request);
+        //System.out.println("Received create request: " + request);
         if (request.getTemperature() == null || request.getTemperature().trim().isEmpty()) {
             Response response = Response.newBuilder()
                     .setId("")
@@ -48,7 +48,7 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
 
     @Override
     public void read(Key request, StreamObserver<SensorDataStored> responseObserver) {
-        System.out.println("Received read request for ID: " + request.getId());
+        //System.out.println("Received read request for ID: " + request.getId());
         SensorDataStored data = db.get(request.getId());
         if (data != null) {
             responseObserver.onNext(data);
@@ -60,7 +60,7 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
 
     @Override
     public void update(UpdateRequest request, StreamObserver<Response> responseObserver) {
-        System.out.println("Received update request for ID: " + request.getId());
+        //System.out.println("Received update request for ID: " + request.getId());
         String id = request.getId();
         SensorDataRequest updatedDataRequest = request.getUpdatedData();
 
@@ -91,7 +91,7 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
 
     @Override
     public void delete(DeleteRequest request, StreamObserver<Response> responseObserver) {
-        System.out.println("Received delete request for ID: " + request.getId());
+        //System.out.println("Received delete request for ID: " + request.getId());
         String id = request.getId();
         SensorDataStored removedData = db.remove(id);
 
@@ -114,7 +114,7 @@ public class DatabaseServiceImpl extends DatabaseServiceGrpc.DatabaseServiceImpl
 
     @Override
     public void readAll(Empty request, StreamObserver<SensorDataStoredList> responseObserver) {
-        System.out.println("Received readAll request");
+        //System.out.println("Received readAll request");
         SensorDataStoredList.Builder listBuilder = SensorDataStoredList.newBuilder();
         for (String id : insertionOrder) {
             SensorDataStored entry = db.get(id);
