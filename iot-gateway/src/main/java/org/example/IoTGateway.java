@@ -24,7 +24,7 @@ public class IoTGateway {
 
             // HTTP-POST-Anfrage aufbauen
             String httpRequest =
-                    "POST /data HTTP/1.1\r\n" +
+                    "POST / HTTP/1.1\r\n" +
                             "Host: " + host + "\r\n" +
                             "Content-Type: application/json\r\n" +
                             "Content-Length: " + json.getBytes(StandardCharsets.UTF_8).length + "\r\n" +

@@ -17,18 +17,18 @@ services:
     depends_on:
       - http-server
 
-  # iot-gateway:
-  #   build:
-  #     context: ./iot-gateway
-  #   environment:
-  #     - HTTP_SERVER_HOST=http-server
-  #   depends_on:
-  #     - http-server
+  iot-gateway:
+    build:
+      context: ./iot-gateway
+    environment:
+      - HTTP_SERVER_HOST=http-server
+    depends_on:
+      - http-server
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #   ports:
-  #     - "80:80"
-  #   depends_on:
-  #     - http-server
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - http-server
