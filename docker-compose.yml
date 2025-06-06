@@ -32,3 +32,59 @@ services:
       - "80:80"
     depends_on:
       - http-server
+
+  mqtt:
+    build:
+      context: ./mqtt
+    container_name: sensor-simulator
+    depends_on:
+      - hivemq
+    environment:
+      - MQTT_BROKER=hivemq
+    networks:
+      - mqtt_net
+
+  hivemq:
+    image: hivemq/hivemq-ce
+    container_name: hivemq
+    ports:
+      - "1883:1883"   # MQTT
+    networks:
+      - mqtt_net
+    volumes:
+      - hivemq_conf:/opt/hivemq/conf
+      - hivemq_data:/opt/hivemq/data
+
+  mqtt-explorer:
+    image: smeagolworms4/mqtt-explorer
+    container_name: mqtt-explorer
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./config/mqtt-explorer:/mqtt-explorer/config
+    networks:
+      - mqtt_net
+    depends_on:
+      - hivemq
+
+  nodered:
+    image: nodered/node-red
+    container_name: node-red
+    ports:
+      - "1880:1880"
+    volumes:
+      - ./config/nodered:/data
+    networks:
+      - mqtt_net
+    depends_on:
+      - hivemq
+
+networks:
+  mqtt_net:
+    driver: bridge
+
+volumes:
+  nodered_data:
+  hivemq_conf:
+  hivemq_data:
+  mqtt-explorer:
