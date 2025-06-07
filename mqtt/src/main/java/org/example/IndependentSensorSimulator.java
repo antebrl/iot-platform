@@ -68,36 +68,26 @@ public class IndependentSensorSimulator {
                     .serverPort(BROKER_PORT)
                     .buildAsync();
 
-            attemptConnection(client, 5);
-        }
-
-        private void attemptConnection(Mqtt3AsyncClient client, int retriesLeft) {
             client.connectWith()
                     .cleanSession(true)
                     .send()
                     .whenComplete((connAck, throwable) -> {
                         if (throwable != null) {
                             System.err.printf("[%s] Verbindungsversuch fehlgeschlagen: %s%n", sensorId, throwable.getMessage());
-
-                            if (retriesLeft > 0) {
-                                try {
-                                    Thread.sleep(5000);
-                                } catch (InterruptedException e) {
-                                    System.err.println("[" + sensorId + "] Retry unterbrochen.");
-                                    semaphore.release();
-                                    return;
-                                }
-
-                                attemptConnection(client, retriesLeft - 1);
-                            } else {
-                                System.err.printf("[%s] Keine weiteren Verbindungsversuche.%n", sensorId);
-                                semaphore.release();
-                            }
+                            semaphore.release();
                             return;
                         }
 
                         System.out.printf("[%s] Erfolgreich verbunden mit HiveMQ.%n", sensorId);
-                        startPublishing(client);
+
+                        // Start Publishing in separatem Thread
+                        executor.submit(() -> {
+                            try {
+                                startPublishing(client);
+                            } finally {
+                                semaphore.release(); // Freigabe des Slots – auch bei Erfolg
+                            }
+                        });
                     });
         }
 
@@ -128,8 +118,6 @@ public class IndependentSensorSimulator {
                     break;
                 }
             }
-
-            semaphore.release(); // Sensor freigeben bei Fehler oder Beenden
         }
     }
 }
