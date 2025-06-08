@@ -2,7 +2,7 @@ package org.example;
 
 import com.hivemq.client.mqtt.MqttClient;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
-
+import java.util.Locale;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -13,23 +13,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class IndependentSensorSimulator {
 
-    private static final String BROKER_HOST = "hivemq"; // Hostname aus Docker Compose
-    private static final int BROKER_PORT = 1883;
+    static final String BROKER_HOST = "hivemq";
+    static final int BROKER_PORT = 1883;
 
-    private static final int INTERVAL = 3000; // Zeit zwischen Publishs
-    private static final int NEW_SENSOR_INTERVAL = 5000; // Zeit zwischen Starts neuer Sensoren
-    private static final int MAX_SENSORS = 20; // Maximale Anzahl gleichzeitig aktiver Sensoren
+    static final int INTERVAL = 3000;
+    static final int NEW_SENSOR_INTERVAL = 5000;
+    static final int MAX_SENSORS = 20;
 
-    private static final AtomicInteger sensorCounter = new AtomicInteger(1);
-    private static final ExecutorService executor = Executors.newCachedThreadPool();
-    private static final Semaphore semaphore = new Semaphore(MAX_SENSORS);
+    static final AtomicInteger sensorCounter = new AtomicInteger(1);
+    static final ExecutorService executor = Executors.newCachedThreadPool();
+    static final Semaphore semaphore = new Semaphore(MAX_SENSORS);
 
     public static void main(String[] args) {
         System.out.println("Starte Sensor-Simulator...");
 
         while (true) {
             try {
-                semaphore.acquire(); // Blockiert, wenn MAX_SENSORS erreicht
+                semaphore.acquire();
                 String sensorId = "temp-sensor-" + sensorCounter.getAndIncrement();
                 executor.submit(new TemperatureSensor(sensorId));
                 Thread.sleep(NEW_SENSOR_INTERVAL);
@@ -42,26 +42,34 @@ public class IndependentSensorSimulator {
         executor.shutdown();
     }
 
-    static class TemperatureSensor implements Runnable {
+    public static class TemperatureSensor implements Runnable {
         private final String sensorId;
         private final Random random = new Random();
         private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+        private final Mqtt3AsyncClient clientOverride;
 
+        // Konstruktor für Produktion (nur sensorId)
         public TemperatureSensor(String sensorId) {
+            this(sensorId, null);
+        }
+
+        // Konstruktor für Tests (sensorId + optionaler Mock-Client)
+        public TemperatureSensor(String sensorId, Mqtt3AsyncClient clientOverride) {
             this.sensorId = sensorId;
+            this.clientOverride = clientOverride;
         }
 
         @Override
         public void run() {
             try {
-                Thread.sleep(3000); // Kurzes Warten, z.B. nach Container-Start
+                Thread.sleep(3000);
             } catch (InterruptedException e) {
                 System.err.println("[" + sensorId + "] Start unterbrochen.");
                 semaphore.release();
                 return;
             }
 
-            Mqtt3AsyncClient client = MqttClient.builder()
+            Mqtt3AsyncClient client = (clientOverride != null) ? clientOverride : MqttClient.builder()
                     .useMqttVersion3()
                     .identifier(UUID.randomUUID().toString())
                     .serverHost(BROKER_HOST)
@@ -80,12 +88,11 @@ public class IndependentSensorSimulator {
 
                         System.out.printf("[%s] Erfolgreich verbunden mit HiveMQ.%n", sensorId);
 
-                        // Start Publishing in separatem Thread
                         executor.submit(() -> {
                             try {
                                 startPublishing(client);
                             } finally {
-                                semaphore.release(); // Freigabe des Slots – auch bei Erfolg
+                                semaphore.release();
                             }
                         });
                     });
@@ -96,10 +103,7 @@ public class IndependentSensorSimulator {
                 try {
                     double temperature = 20 + random.nextDouble() * 10;
                     String timestamp = dateFormat.format(new Date());
-                    String payload = String.format(
-                            "{\"sensorId\":\"%s\",\"temperature\":%.2f,\"timestamp\":\"%s\"}",
-                            sensorId, temperature, timestamp
-                    );
+                    String payload = generatePayload(temperature, timestamp);
 
                     String topic = "sensor/temperature/" + sensorId;
 
@@ -118,6 +122,13 @@ public class IndependentSensorSimulator {
                     break;
                 }
             }
+        }
+
+        // Neu: Payload-Generierung extrahiert für Tests
+        public String generatePayload(double temperature, String timestamp) {
+            return String.format(Locale.US,
+                    "{\"sensorId\":\"%s\",\"temperature\":%.2f,\"timestamp\":\"%s\"}",
+                    sensorId, temperature, timestamp);
         }
     }
 }
