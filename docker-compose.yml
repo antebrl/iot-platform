@@ -22,8 +22,12 @@ services:
       context: ./iot-gateway
     environment:
       - HTTP_SERVER_HOST=http-server
+    networks:
+      - mqtt_net
+      - default
     depends_on:
       - http-server
+      - hivemq
 
   frontend:
     build:
