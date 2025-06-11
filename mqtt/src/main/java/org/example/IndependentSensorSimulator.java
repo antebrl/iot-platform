@@ -2,59 +2,51 @@ package org.example;
 
 import com.hivemq.client.mqtt.MqttClient;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
-import java.util.Locale;
+import com.google.gson.Gson;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class IndependentSensorSimulator {
 
     static final String BROKER_HOST = "hivemq";
     static final int BROKER_PORT = 1883;
+    static final Gson gson = new Gson();
 
     static final int INTERVAL = 3000;
-    static final int NEW_SENSOR_INTERVAL = 5000;
-    static final int MAX_SENSORS = 20;
+    static final int MAX_RETRIES = 5;
+    static final int RETRY_DELAY = 5000; // 5 seconds
 
-    static final AtomicInteger sensorCounter = new AtomicInteger(1);
     static final ExecutorService executor = Executors.newCachedThreadPool();
-    static final Semaphore semaphore = new Semaphore(MAX_SENSORS);
 
     public static void main(String[] args) {
         System.out.println("Starte Sensor-Simulator...");
 
-        while (true) {
-            try {
-                semaphore.acquire();
-                String sensorId = "temp-sensor-" + sensorCounter.getAndIncrement();
-                executor.submit(new TemperatureSensor(sensorId));
-                Thread.sleep(NEW_SENSOR_INTERVAL);
-            } catch (InterruptedException e) {
-                System.err.println("Simulator unterbrochen.");
-                break;
-            }
+        int sensorId = SensorData.getRandomSensorId();
+        executor.submit(new TemperatureSensor(sensorId));
+
+        // Keep the main thread alive
+        try {
+            Thread.currentThread().join();
+        } catch (InterruptedException e) {
+            System.err.println("Simulator unterbrochen.");
         }
 
         executor.shutdown();
     }
 
     public static class TemperatureSensor implements Runnable {
-        private final String sensorId;
-        private final Random random = new Random();
-        private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+        private final int sensorId;
         private final Mqtt3AsyncClient clientOverride;
+        private int retryCount = 0;
 
         // Konstruktor für Produktion (nur sensorId)
-        public TemperatureSensor(String sensorId) {
+        public TemperatureSensor(int sensorId) {
             this(sensorId, null);
         }
 
         // Konstruktor für Tests (sensorId + optionaler Mock-Client)
-        public TemperatureSensor(String sensorId, Mqtt3AsyncClient clientOverride) {
+        public TemperatureSensor(int sensorId, Mqtt3AsyncClient clientOverride) {
             this.sensorId = sensorId;
             this.clientOverride = clientOverride;
         }
@@ -65,45 +57,70 @@ public class IndependentSensorSimulator {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
                 System.err.println("[" + sensorId + "] Start unterbrochen.");
-                semaphore.release();
                 return;
             }
 
-            Mqtt3AsyncClient client = (clientOverride != null) ? clientOverride : MqttClient.builder()
-                    .useMqttVersion3()
-                    .identifier(UUID.randomUUID().toString())
-                    .serverHost(BROKER_HOST)
-                    .serverPort(BROKER_PORT)
-                    .buildAsync();
+            connectWithRetry();
+        }
 
-            client.connectWith()
-                    .cleanSession(true)
-                    .send()
-                    .whenComplete((connAck, throwable) -> {
-                        if (throwable != null) {
-                            System.err.printf("[%s] Verbindungsversuch fehlgeschlagen: %s%n", sensorId, throwable.getMessage());
-                            semaphore.release();
-                            return;
-                        }
+        private void connectWithRetry() {
+            if (retryCount >= MAX_RETRIES) {
+                System.err.printf("[%s] Maximale Anzahl an Verbindungsversuchen erreicht.%n", sensorId);
+                return;
+            }
 
-                        System.out.printf("[%s] Erfolgreich verbunden mit HiveMQ.%n", sensorId);
+            try {
+                Mqtt3AsyncClient client = (clientOverride != null) ? clientOverride : MqttClient.builder()
+                        .useMqttVersion3()
+                        .identifier(UUID.randomUUID().toString())
+                        .serverHost(BROKER_HOST)
+                        .serverPort(BROKER_PORT)
+                        .buildAsync();
 
-                        executor.submit(() -> {
-                            try {
-                                startPublishing(client);
-                            } finally {
-                                semaphore.release();
+                client.connectWith()
+                        .cleanSession(true)
+                        .send()
+                        .whenComplete((connAck, throwable) -> {
+                            if (throwable != null) {
+                                System.err.printf("[%s] Verbindungsversuch fehlgeschlagen: %s%n", sensorId, throwable.getMessage());
+                                retryCount++;
+                                if (retryCount < MAX_RETRIES) {
+                                    System.out.printf("[%s] Verbindungsversuch %d fehlgeschlagen. Warte %d Sekunden...%n", 
+                                        sensorId, retryCount, RETRY_DELAY/1000);
+                                    try {
+                                        Thread.sleep(RETRY_DELAY);
+                                        connectWithRetry();
+                                    } catch (InterruptedException ie) {
+                                        Thread.currentThread().interrupt();
+                                    }
+                                } else {
+                                    System.err.printf("[%s] Maximale Anzahl an Verbindungsversuchen erreicht.%n", sensorId);
+                                }
+                                return;
                             }
+
+                            System.out.printf("[%s] Erfolgreich verbunden mit HiveMQ.%n", sensorId);
+                            executor.submit(() -> startPublishing(client));
                         });
-                    });
+            } catch (Exception e) {
+                System.err.printf("[%s] Fehler beim Verbindungsaufbau: %s%n", sensorId, e.getMessage());
+                retryCount++;
+                if (retryCount < MAX_RETRIES) {
+                    try {
+                        Thread.sleep(RETRY_DELAY);
+                        connectWithRetry();
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
         }
 
         private void startPublishing(Mqtt3AsyncClient client) {
             while (true) {
                 try {
-                    double temperature = 20 + random.nextDouble() * 10;
-                    String timestamp = dateFormat.format(new Date());
-                    String payload = generatePayload(temperature, timestamp);
+                    SensorData data = SensorData.generateRandom(sensorId);
+                    String payload = gson.toJson(data);
 
                     String topic = "sensor/temperature/" + sensorId;
 
@@ -122,13 +139,6 @@ public class IndependentSensorSimulator {
                     break;
                 }
             }
-        }
-
-        // Neu: Payload-Generierung extrahiert für Tests
-        public String generatePayload(double temperature, String timestamp) {
-            return String.format(Locale.US,
-                    "{\"sensorId\":\"%s\",\"temperature\":%.2f,\"timestamp\":\"%s\"}",
-                    sensorId, temperature, timestamp);
         }
     }
 }

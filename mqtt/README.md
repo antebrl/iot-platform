@@ -1,3 +1,7 @@
+## Functional Tests
+```bash
+mvn clean test
+```
 
 ### MQTT Explorer mit HiveMQ CE (host: hivemq Port: 1883)
 http://localhost:4000
