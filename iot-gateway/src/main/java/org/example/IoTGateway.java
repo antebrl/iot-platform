@@ -15,7 +15,7 @@ public class IoTGateway {
 
     private static final String HTTP_SERVER = System.getenv().getOrDefault("HTTP_SERVER_HOST", "localhost");
     private static final int HTTP_PORT = 8080;
-
+    
     private static final int MAX_RETRIES = 5;
     private static final int RETRY_DELAY = 5000; // 5 seconds
     private static int retryCount = 0;
@@ -29,9 +29,12 @@ public class IoTGateway {
                 // Wenn wir hier ankommen, war die Verbindung erfolgreich
                 // Warte auf Unterbrechung
                 Thread.currentThread().join();
+            } catch (InterruptedException e) {
+                System.err.println("Gateway unterbrochen.");
+                break;
             } catch (Exception e) {
                 System.err.println("Unerwarteter Fehler: " + e.getMessage());
-                Thread.sleep(RETRY_DELAY);
+                break;
             }
         }
     }
