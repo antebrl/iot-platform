@@ -37,10 +37,9 @@ services:
     depends_on:
       - http-server
 
-  mqtt:
+  sensor:
     build:
       context: ./mqtt
-    container_name: sensor-simulator
     depends_on:
       - hivemq
     environment:
