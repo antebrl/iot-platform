@@ -6,6 +6,6 @@ docker compose ps --all
 ```
 ## Scaling
 ```bash
-docker compose up --build --scale sensory=3
+docker compose up --build --scale sensor=3
 ```
 later with docker swarm or kubernetes
