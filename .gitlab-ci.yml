@@ -1,14 +1,28 @@
-stages:
-  - build
-  - deploy
+image:
+  name: gcr.io/kaniko-project/executor:debug
+  entrypoint: [ '' ]
 
 variables:
+  DOCKERFILE_DIRECTORY: ${CI_PROJECT_DIR}
+  DOCKERFILE_LOCATION: ${CI_PROJECT_DIR}/Dockerfile.arm64
+  CONTAINER_NAME: ${CI_JOB_NAME#build_}
+  TAG_NAME: ${CI_COMMIT_SHORT_SHA}
   HTTP_SERVER_CONTAINER_NAME: 'http-server'
   RPC_DATABASE_CONTAINER_NAME: 'rpc-database'
   IOT_GATEWAY_CONTAINER_NAME: 'iot-gateway'
   FRONTEND_CONTAINER_NAME: 'frontend'
   SENSOR_CONTAINER_NAME: 'sensor'
-  CONTAINER_TAG: "${CI_COMMIT_SHORT_SHA}"
+
+stages:
+  - build
+  - deploy
+
+before_script:
+  - echo "DOCKERFILE_DIRECTORY" $DOCKERFILE_DIRECTORY
+  - echo "DOCKERFILE_LOCATION" $DOCKERFILE_LOCATION
+  - echo "CONTAINER_NAME" $CONTAINER_NAME
+  - echo "TAG_NAME" $TAG_NAME
+  - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
 
 .build_container_image:
   image:
@@ -24,7 +38,7 @@ variables:
     - echo "CONTAINER_NAME" $CONTAINER_NAME
     - echo "TAG_NAME" $TAG_NAME
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor --context $DOCKERFILE_DIRECTORY --cache=true --dockerfile $DOCKERFILE_LOCATION --destination $CI_REGISTRY_IMAGE/$CONTAINER_NAME:$TAG_NAME --destination $CI_REGISTRY_IMAGE/$CONTAINER_NAME:latest --build-platform=linux/arm64
+    - /kaniko/executor --context $DOCKERFILE_DIRECTORY --cache=true --dockerfile $DOCKERFILE_LOCATION --destination $CI_REGISTRY_IMAGE/$CONTAINER_NAME:$TAG_NAME --destination $CI_REGISTRY_IMAGE/$CONTAINER_NAME:latest
 
 build_http_server:
   stage: build
@@ -32,7 +46,7 @@ build_http_server:
     - .build_container_image
   variables:
     DOCKERFILE_DIRECTORY: $CI_PROJECT_DIR/http-server/
-    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/http-server/Dockerfile
+    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/http-server/Dockerfile.arm64
     CONTAINER_NAME: $HTTP_SERVER_CONTAINER_NAME
     TAG_NAME: $CONTAINER_TAG
   only:
@@ -44,7 +58,7 @@ build_rpc_database:
     - .build_container_image
   variables:
     DOCKERFILE_DIRECTORY: $CI_PROJECT_DIR/rpc-database/
-    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/rpc-database/Dockerfile
+    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/rpc-database/Dockerfile.arm64
     CONTAINER_NAME: $RPC_DATABASE_CONTAINER_NAME
     TAG_NAME: $CONTAINER_TAG
   only:
@@ -56,7 +70,7 @@ build_iot_gateway:
     - .build_container_image
   variables:
     DOCKERFILE_DIRECTORY: $CI_PROJECT_DIR/iot-gateway/
-    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/iot-gateway/Dockerfile
+    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/iot-gateway/Dockerfile.arm64
     CONTAINER_NAME: $IOT_GATEWAY_CONTAINER_NAME
     TAG_NAME: $CONTAINER_TAG
   only:
@@ -68,7 +82,7 @@ build_frontend:
     - .build_container_image
   variables:
     DOCKERFILE_DIRECTORY: $CI_PROJECT_DIR/frontend/
-    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/frontend/Dockerfile
+    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/frontend/Dockerfile.arm64
     CONTAINER_NAME: $FRONTEND_CONTAINER_NAME
     TAG_NAME: $CONTAINER_TAG
   only:
@@ -80,7 +94,7 @@ build_sensor:
     - .build_container_image
   variables:
     DOCKERFILE_DIRECTORY: $CI_PROJECT_DIR/mqtt/
-    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/mqtt/Dockerfile
+    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/mqtt/Dockerfile.arm64
     CONTAINER_NAME: $SENSOR_CONTAINER_NAME
     TAG_NAME: $CONTAINER_TAG
   only:
