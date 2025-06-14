@@ -14,7 +14,7 @@ public class IndependentSensorSimulator {
     static final Gson gson = new Gson();
 
     static final int INTERVAL = 3000;
-    static final int MAX_RETRIES = 5;
+    static final int MAX_RETRIES = 50;
     static final int RETRY_DELAY = 5000; // 5 seconds
 
     static final ExecutorService executor = Executors.newCachedThreadPool();

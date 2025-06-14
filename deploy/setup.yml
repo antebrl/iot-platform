@@ -1,6 +1,6 @@
 ---
 - name: Setup IoT Platform prerequisites
-  hosts: cube_3
+  hosts: cube_12
   become: yes
   vars:
     app_dir: /home/stanbraeh/iot-platform

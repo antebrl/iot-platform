@@ -1,6 +1,6 @@
 ---
-- name: Configure network settings for cube_3
-  hosts: cube_3
+- name: Configure network settings for cube_12
+  hosts: cube_12
   become: yes
   vars:
     app_dir: /home/stanbraeh/iot-platform

@@ -16,8 +16,6 @@ services:
       - "50051:50051"
     networks:
       - iot_platform_net
-    depends_on:
-      - http-server
 
   iot-gateway:
     image: registry.code.fbi.h-da.de/distributed-systems/praktika/lab-for-distributed-systems-2025-sose/moore/mo-4x-teama/iot-gateway:latest
@@ -25,10 +23,6 @@ services:
       - HTTP_SERVER_HOST=http-server
     networks:
       - iot_platform_net
-      - mqtt_net
-    depends_on:
-      - http-server
-      - hivemq
 
   frontend:
     image: registry.code.fbi.h-da.de/distributed-systems/praktika/lab-for-distributed-systems-2025-sose/moore/mo-4x-teama/frontend:latest
@@ -36,17 +30,13 @@ services:
       - "80:80"
     networks:
       - iot_platform_net
-    depends_on:
-      - http-server
 
   sensor:
     image: registry.code.fbi.h-da.de/distributed-systems/praktika/lab-for-distributed-systems-2025-sose/moore/mo-4x-teama/sensor:latest
-    depends_on:
-      - hivemq
     environment:
       - MQTT_BROKER=hivemq
     networks:
-      - mqtt_net
+      - iot_platform_net
 
   hivemq:
     image: hivemq/hivemq-ce
@@ -54,7 +44,7 @@ services:
     ports:
       - "1883:1883"   # MQTT
     networks:
-      - mqtt_net
+      - iot_platform_net
     volumes:
       - hivemq_conf:/opt/hivemq/conf
       - hivemq_data:/opt/hivemq/data
@@ -62,8 +52,6 @@ services:
 networks:
   iot_platform_net:
     external: true
-  mqtt_net:
-    driver: bridge
 
 volumes:
   hivemq_conf:
