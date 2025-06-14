@@ -1,0 +1,15 @@
+[
+  {
+    "name": "HiveMQ",
+    "host": "hivemq",
+    "port": 1883,
+    "protocol": "mqtt",
+    "clientId": "mqtt-explorer",
+    "clean": true,
+    "connectTimeout": 30,
+    "keepAlive": 60,
+    "topics": [
+      "#"
+    ]
+  }
+]
