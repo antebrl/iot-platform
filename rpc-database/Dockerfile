@@ -26,7 +26,7 @@ WORKDIR /app
 RUN groupadd -r grpcuser && useradd -r -g grpcuser grpcuser
 
 # Kopiere JAR aus Build-Stage
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/target/*-jar-with-dependencies.jar app.jar
 
 # Setze Besitzer für mehr Sicherheit
 RUN chown -R grpcuser:grpcuser /app

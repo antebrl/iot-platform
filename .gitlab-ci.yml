@@ -1,20 +1,14 @@
-image: docker:20.10.16
-
-services:
-  - docker:20.10.16-dind
+stages:
+  - build
+  - deploy
 
 variables:
-  DOCKER_TLS_CERTDIR: "/certs"
   HTTP_SERVER_CONTAINER_NAME: 'http-server'
   RPC_DATABASE_CONTAINER_NAME: 'rpc-database'
   IOT_GATEWAY_CONTAINER_NAME: 'iot-gateway'
   FRONTEND_CONTAINER_NAME: 'frontend'
   SENSOR_CONTAINER_NAME: 'sensor'
   CONTAINER_TAG: "${CI_COMMIT_SHORT_SHA}"
-
-stages:
-  - build
-  - deploy
 
 .build_container_image:
   image:
