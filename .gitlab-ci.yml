@@ -18,6 +18,8 @@ variables:
     DOCKERFILE_LOCATION: 'unset'
     CONTAINER_NAME: 'unset'
     TAG_NAME: 'unset'
+  tags:
+    - arm64
   script:
     - mkdir -p /kaniko/.docker
     - echo "DOCKERFILE_LOCATION" $DOCKERFILE_LOCATION
