@@ -1,0 +1,93 @@
+image: docker:20.10.16
+
+services:
+  - docker:20.10.16-dind
+
+variables:
+  DOCKER_TLS_CERTDIR: "/certs"
+  HTTP_SERVER_CONTAINER_NAME: 'http-server'
+  RPC_DATABASE_CONTAINER_NAME: 'rpc-database'
+  IOT_GATEWAY_CONTAINER_NAME: 'iot-gateway'
+  FRONTEND_CONTAINER_NAME: 'frontend'
+  SENSOR_CONTAINER_NAME: 'sensor'
+  CONTAINER_TAG: "${CI_COMMIT_SHORT_SHA}"
+
+stages:
+  - build
+  - deploy
+
+.build_container_image:
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [ '' ]
+  variables:
+    DOCKERFILE_LOCATION: 'unset'
+    CONTAINER_NAME: 'unset'
+    TAG_NAME: 'unset'
+  script:
+    - mkdir -p /kaniko/.docker
+    - echo "DOCKERFILE_LOCATION" $DOCKERFILE_LOCATION
+    - echo "CONTAINER_NAME" $CONTAINER_NAME
+    - echo "TAG_NAME" $TAG_NAME
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --context $DOCKERFILE_DIRECTORY --cache=true --dockerfile $DOCKERFILE_LOCATION --destination $CI_REGISTRY_IMAGE/$CONTAINER_NAME:$TAG_NAME --destination $CI_REGISTRY_IMAGE/$CONTAINER_NAME:latest
+
+build_http_server:
+  stage: build
+  extends:
+    - .build_container_image
+  variables:
+    DOCKERFILE_DIRECTORY: $CI_PROJECT_DIR/http-server/
+    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/http-server/Dockerfile
+    CONTAINER_NAME: $HTTP_SERVER_CONTAINER_NAME
+    TAG_NAME: $CONTAINER_TAG
+  only:
+    - main
+
+build_rpc_database:
+  stage: build
+  extends:
+    - .build_container_image
+  variables:
+    DOCKERFILE_DIRECTORY: $CI_PROJECT_DIR/rpc-database/
+    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/rpc-database/Dockerfile
+    CONTAINER_NAME: $RPC_DATABASE_CONTAINER_NAME
+    TAG_NAME: $CONTAINER_TAG
+  only:
+    - main
+
+build_iot_gateway:
+  stage: build
+  extends:
+    - .build_container_image
+  variables:
+    DOCKERFILE_DIRECTORY: $CI_PROJECT_DIR/iot-gateway/
+    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/iot-gateway/Dockerfile
+    CONTAINER_NAME: $IOT_GATEWAY_CONTAINER_NAME
+    TAG_NAME: $CONTAINER_TAG
+  only:
+    - main
+
+build_frontend:
+  stage: build
+  extends:
+    - .build_container_image
+  variables:
+    DOCKERFILE_DIRECTORY: $CI_PROJECT_DIR/frontend/
+    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/frontend/Dockerfile
+    CONTAINER_NAME: $FRONTEND_CONTAINER_NAME
+    TAG_NAME: $CONTAINER_TAG
+  only:
+    - main
+
+build_sensor:
+  stage: build
+  extends:
+    - .build_container_image
+  variables:
+    DOCKERFILE_DIRECTORY: $CI_PROJECT_DIR/mqtt/
+    DOCKERFILE_LOCATION: $CI_PROJECT_DIR/mqtt/Dockerfile
+    CONTAINER_NAME: $SENSOR_CONTAINER_NAME
+    TAG_NAME: $CONTAINER_TAG
+  only:
+    - main 

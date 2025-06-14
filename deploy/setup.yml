@@ -1,0 +1,33 @@
+---
+- name: Setup IoT Platform prerequisites
+  hosts: cube_4
+  become: yes
+  vars:
+    app_dir: /home/stanbraeh/iot-platform
+    docker_compose_version: "3.8"
+    gitlab_registry: "registry.gitlab.com/your-username/your-project"
+    gitlab_username: "{{ lookup('env', 'GITLAB_USERNAME') }}"
+    gitlab_password: "{{ lookup('env', 'GITLAB_PASSWORD') }}"
+
+  tasks:
+    - name: Create application directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: '0755'
+        owner: stanbraeh
+        group: stanbraeh
+
+    - name: Copy docker-compose.yml
+      copy:
+        src: docker-compose.yml
+        dest: "{{ app_dir }}/docker-compose.yml"
+        mode: '0644'
+        owner: stanbraeh
+        group: stanbraeh
+
+    - name: Login to GitLab registry
+      community.docker.docker_login:
+        registry_url: "{{ gitlab_registry }}"
+        username: "{{ gitlab_username }}"
+        password: "{{ gitlab_password }}" 

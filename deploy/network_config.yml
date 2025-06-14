@@ -1,0 +1,13 @@
+---
+- name: Configure network settings for cube_4
+  hosts: cube_4
+  become: yes
+  vars:
+    app_dir: /home/stanbraeh/iot-platform
+
+  tasks:
+    - name: Create custom Docker network
+      community.docker.docker_network:
+        name: iot_network
+        state: present
+        driver: bridge 

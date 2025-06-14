@@ -1,0 +1,63 @@
+---
+- name: Deploy IoT Platform services
+  hosts: cube_4
+  become: yes
+  vars:
+    app_dir: /home/stanbraeh/iot-platform
+
+  tasks:
+    - name: Start services on pi-1 (http-server)
+      when: inventory_hostname == 'pi-1.cube-4'
+      docker_compose:
+        project_src: "{{ app_dir }}"
+        state: present
+        services:
+          - http-server
+
+    - name: Start services on pi-2 (rpc-database)
+      when: inventory_hostname == 'pi-2.cube-4'
+      docker_compose:
+        project_src: "{{ app_dir }}"
+        state: present
+        services:
+          - rpc-database
+
+    - name: Start services on pi-3 (iot-gateway)
+      when: inventory_hostname == 'pi-3.cube-4'
+      docker_compose:
+        project_src: "{{ app_dir }}"
+        state: present
+        services:
+          - iot-gateway
+
+    - name: Start services on pi-4 (hivemq)
+      when: inventory_hostname == 'pi-4.cube-4'
+      docker_compose:
+        project_src: "{{ app_dir }}"
+        state: present
+        services:
+          - hivemq
+
+    - name: Start services on pi-5 (frontend)
+      when: inventory_hostname == 'pi-5.cube-4'
+      docker_compose:
+        project_src: "{{ app_dir }}"
+        state: present
+        services:
+          - frontend
+
+    - name: Start services on pi-6 (sensor-1)
+      when: inventory_hostname == 'pi-6.cube-4'
+      docker_compose:
+        project_src: "{{ app_dir }}"
+        state: present
+        services:
+          - sensor
+
+    - name: Start services on pi-7 (sensor-2)
+      when: inventory_hostname == 'pi-7.cube-4'
+      docker_compose:
+        project_src: "{{ app_dir }}"
+        state: present
+        services:
+          - sensor 

@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  http-server:
+    image: ${CI_REGISTRY_IMAGE}/http-server:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - RPC_DATABASE_HOST=pi-2.cube-4
+    networks:
+      - iot_platform_net
+
+  rpc-database:
+    image: ${CI_REGISTRY_IMAGE}/rpc-database:latest
+    ports:
+      - "50051:50051"
+    networks:
+      - iot_platform_net
+
+  iot-gateway:
+    image: ${CI_REGISTRY_IMAGE}/iot-gateway:latest
+    environment:
+      - HTTP_SERVER_HOST=pi-1.cube-4
+    networks:
+      - iot_platform_net
+      - mqtt_net
+    depends_on:
+      - hivemq
+
+  frontend:
+    image: ${CI_REGISTRY_IMAGE}/frontend:latest
+    ports:
+      - "80:80"
+    networks:
+      - iot_platform_net
+
+  sensor:
+    image: ${CI_REGISTRY_IMAGE}/sensor:latest
+    environment:
+      - MQTT_BROKER=pi-4.cube-4
+    networks:
+      - mqtt_net
+
+  hivemq:
+    image: hivemq/hivemq-ce
+    container_name: hivemq
+    ports:
+      - "1883:1883"   # MQTT
+    networks:
+      - mqtt_net
+    volumes:
+      - hivemq_conf:/opt/hivemq/conf
+      - hivemq_data:/opt/hivemq/data
+
+networks:
+  iot_platform_net:
+    external: true
+  mqtt_net:
+    external: true
+
+volumes:
+  hivemq_conf:
+  hivemq_data: 
