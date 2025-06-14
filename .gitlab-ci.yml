@@ -24,7 +24,7 @@ variables:
     - echo "CONTAINER_NAME" $CONTAINER_NAME
     - echo "TAG_NAME" $TAG_NAME
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor --context $DOCKERFILE_DIRECTORY --cache=true --dockerfile $DOCKERFILE_LOCATION --destination $CI_REGISTRY_IMAGE/$CONTAINER_NAME:$TAG_NAME --destination $CI_REGISTRY_IMAGE/$CONTAINER_NAME:latest --build-arg BUILDPLATFORM=linux/arm64 --build-arg TARGETPLATFORM=linux/arm64
+    - /kaniko/executor --context $DOCKERFILE_DIRECTORY --cache=true --dockerfile $DOCKERFILE_LOCATION --destination $CI_REGISTRY_IMAGE/$CONTAINER_NAME:$TAG_NAME --destination $CI_REGISTRY_IMAGE/$CONTAINER_NAME:latest --build-arg BUILDPLATFORM=linux/arm64 --build-arg TARGETPLATFORM=linux/arm64 --build-arg opts="CGO_ENABLED=0 GOARCH=arm64" --customPlatform=linux/arm64/v8
 
 build_http_server:
   stage: build

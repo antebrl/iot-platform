@@ -1,13 +1,13 @@
 ---
 - name: Deploy IoT Platform services
-  hosts: cube_4
+  hosts: cube_3
   become: yes
   vars:
     app_dir: /home/stanbraeh/iot-platform
 
   tasks:
     - name: Start services on pi-1 (http-server)
-      when: inventory_hostname == 'pi-1.cube-4'
+      when: inventory_hostname == 'pi-1.cube-3'
       community.docker.docker_compose_v2:
         project_src: "{{ app_dir }}"
         state: present
@@ -15,7 +15,7 @@
           - http-server
 
     - name: Start services on pi-2 (rpc-database)
-      when: inventory_hostname == 'pi-2.cube-4'
+      when: inventory_hostname == 'pi-2.cube-3'
       community.docker.docker_compose_v2:
         project_src: "{{ app_dir }}"
         state: present
@@ -23,7 +23,7 @@
           - rpc-database
 
     - name: Start services on pi-3 (iot-gateway)
-      when: inventory_hostname == 'pi-3.cube-4'
+      when: inventory_hostname == 'pi-3.cube-3'
       community.docker.docker_compose_v2:
         project_src: "{{ app_dir }}"
         state: present
@@ -31,7 +31,7 @@
           - iot-gateway
 
     - name: Start services on pi-4 (hivemq)
-      when: inventory_hostname == 'pi-4.cube-4'
+      when: inventory_hostname == 'pi-4.cube-3'
       community.docker.docker_compose_v2:
         project_src: "{{ app_dir }}"
         state: present
@@ -39,7 +39,7 @@
           - hivemq
 
     - name: Start services on pi-5 (frontend)
-      when: inventory_hostname == 'pi-5.cube-4'
+      when: inventory_hostname == 'pi-5.cube-3'
       community.docker.docker_compose_v2:
         project_src: "{{ app_dir }}"
         state: present
@@ -47,7 +47,7 @@
           - frontend
 
     - name: Start services on pi-6 (sensor-1)
-      when: inventory_hostname == 'pi-6.cube-4'
+      when: inventory_hostname == 'pi-6.cube-3'
       community.docker.docker_compose_v2:
         project_src: "{{ app_dir }}"
         state: present
@@ -55,7 +55,7 @@
           - sensor
 
     - name: Start services on pi-7 (sensor-2)
-      when: inventory_hostname == 'pi-7.cube-4'
+      when: inventory_hostname == 'pi-7.cube-3'
       community.docker.docker_compose_v2:
         project_src: "{{ app_dir }}"
         state: present
