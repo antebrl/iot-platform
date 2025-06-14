@@ -1,0 +1,12 @@
+services:  
+  hivemq-performance:
+    image: hivemq/hivemq-ce
+    ports:
+      - "1883:1883"   # MQTT
+    volumes:
+      - hivemq_performance_conf:/opt/hivemq/conf
+      - hivemq_performance_data:/opt/hivemq/data
+
+volumes:
+  hivemq_performance_conf:
+  hivemq_performance_data:
