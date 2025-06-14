@@ -5,11 +5,17 @@
   vars:
     app_dir: /home/stanbraeh/iot-platform
     docker_compose_version: "3.8"
-    gitlab_registry: "registry.gitlab.com/your-username/your-project"
+    gitlab_registry: "registry.code.fbi.h-da.de"
     gitlab_username: "{{ lookup('env', 'GITLAB_USERNAME') }}"
     gitlab_password: "{{ lookup('env', 'GITLAB_PASSWORD') }}"
 
   tasks:
+    - name: Install Python Docker module
+      apt:
+        name: python3-docker
+        state: present
+        update_cache: yes
+
     - name: Create application directory
       file:
         path: "{{ app_dir }}"
@@ -30,4 +36,5 @@
       community.docker.docker_login:
         registry_url: "{{ gitlab_registry }}"
         username: "{{ gitlab_username }}"
-        password: "{{ gitlab_password }}" 
+        password: "{{ gitlab_password }}"
+        reauthorize: yes 
