@@ -13,6 +13,9 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Set environment variable for API URL
+ENV VITE_API_URL=http://141.100.42.122:8080/
+
 # Build the application
 RUN npm run build
 

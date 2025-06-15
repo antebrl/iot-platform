@@ -6,7 +6,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - RPC_DATABASE_HOST=rpc-database
+      - RPC_DATABASE_HOST=141.100.42.121
     networks:
       - iot_platform_net
 
@@ -20,7 +20,8 @@ services:
   iot-gateway:
     image: registry.code.fbi.h-da.de/distributed-systems/praktika/lab-for-distributed-systems-2025-sose/moore/mo-4x-teama/iot-gateway:latest
     environment:
-      - HTTP_SERVER_HOST=http-server
+      - HTTP_SERVER_HOST=141.100.42.122
+      - MQTT_BROKER_HOST=141.100.42.123
     networks:
       - iot_platform_net
 
@@ -34,7 +35,7 @@ services:
   sensor:
     image: registry.code.fbi.h-da.de/distributed-systems/praktika/lab-for-distributed-systems-2025-sose/moore/mo-4x-teama/sensor:latest
     environment:
-      - MQTT_BROKER=hivemq
+      - MQTT_BROKER_HOST=141.100.42.123
     networks:
       - iot_platform_net
 

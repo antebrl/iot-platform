@@ -9,7 +9,7 @@ import java.util.concurrent.*;
 
 public class IndependentSensorSimulator {
 
-    static final String BROKER_HOST = "hivemq";
+    static final String BROKER_HOST = System.getenv().getOrDefault("MQTT_BROKER_HOST", "hivemq");
     static final int BROKER_PORT = 1883;
     static final Gson gson = new Gson();
 

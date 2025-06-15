@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public class IoTGateway {
     private static final Gson gson = new Gson();
-    private static final String MQTT_BROKER = "hivemq";
+    private static final String MQTT_BROKER = System.getenv().getOrDefault("MQTT_BROKER_HOST", "hivemq");
     private static final int MQTT_PORT = 1883;
 
     private static final String HTTP_SERVER = System.getenv().getOrDefault("HTTP_SERVER_HOST", "localhost");

@@ -43,7 +43,7 @@ services:
     depends_on:
       - hivemq
     environment:
-      - MQTT_BROKER=hivemq
+      - MQTT_BROKER_HOST=hivemq
     networks:
       - mqtt_net
 
