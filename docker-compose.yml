@@ -8,6 +8,9 @@ services:
       - "8080:8080"
     environment:
       - RPC_DATABASE_HOST=rpc-database
+    networks:
+      - default
+      - hazelcast-net
 
   rpc-database:
     build:
@@ -16,6 +19,9 @@ services:
       - "50051:50051"
     depends_on:
       - http-server
+    networks:
+      - default
+      - hazelcast-net
 
   iot-gateway:
     build:
@@ -82,8 +88,36 @@ services:
     depends_on:
       - hivemq
 
+  hazelcast-node:
+    image: hazelcast/hazelcast:5.3
+    environment:
+      - HZ_CLUSTERNAME=dev
+    networks:
+      - hazelcast-net
+    ports:
+      - "5701:5701"
+
+  hazelcast-mancenter:
+    image: hazelcast/management-center:5.3
+    ports:
+      - "8081:8080"
+    environment:
+      - MC_DEFAULT_CLUSTER=dev
+      - MC_DEFAULT_CLUSTER_MEMBERS=hazelcast-node
+      - MC_ADMIN_ENABLED=true
+      - MC_ADMIN_USER=admin
+      - MC_ADMIN_PASSWORD=Geheim42!
+    networks:
+      - default
+      - hazelcast-net
+    depends_on:
+      - http-server
+      - hazelcast-node
+
 networks:
   mqtt_net:
+    driver: bridge
+  hazelcast-net:
     driver: bridge
 
 volumes:

@@ -1,4 +1,8 @@
 package org.example;
+import org.example.db.DataStorage;
+import org.example.db.InMemoryDataStorage;
+import org.example.db.HazelcastDataStorage;
+import org.example.db.RedundantDataStorage;
 
 import java.io.IOException;
 
@@ -15,7 +19,12 @@ public class ServerApplication {
      * @throws IOException If there's an error starting the server
      */
     public static void main(String[] args) throws IOException {
-        HttpServer server = new HttpServer();
+        // Speicherungsredundanz
+        DataStorage inMemoryStorage = new InMemoryDataStorage();
+        DataStorage hazelcastStorage = new HazelcastDataStorage(); // musst du erstellen
+        DataStorage redundantStorage = new RedundantDataStorage(inMemoryStorage, hazelcastStorage);
+
+        HttpServer server = new HttpServer(8080, redundantStorage);
         System.out.println("Starting HTTP server...");
         server.start();
         
