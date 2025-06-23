@@ -1,0 +1,11 @@
+hazelcast:
+  cluster-name: dev
+  jet:
+    enabled: true                  # ✅ Jet aktivieren
+  network:
+    join:
+      multicast:
+        enabled: true
+  map:
+    default:
+      backup-count: 1

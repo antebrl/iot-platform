@@ -2,8 +2,7 @@ version: '3.8'
 
 services:
   http-server:
-    build:
-      context: ./http-server
+    image: mo4x_teama_http-server
     ports:
       - "8080:8080"
     environment:
@@ -11,10 +10,11 @@ services:
     networks:
       - default
       - hazelcast-net
+    deploy:
+      replicas: 1
 
   rpc-database:
-    build:
-      context: ./rpc-database
+    image: mo4x_teama_rpc-database
     ports:
       - "50051:50051"
     depends_on:
@@ -22,10 +22,11 @@ services:
     networks:
       - default
       - hazelcast-net
+    deploy:
+      replicas: 1
 
   iot-gateway:
-    build:
-      context: ./iot-gateway
+    image: mo4x_teama_iot-gateway
     environment:
       - HTTP_SERVER_HOST=http-server
     networks:
@@ -34,39 +35,43 @@ services:
     depends_on:
       - http-server
       - hivemq
+    deploy:
+      replicas: 1
 
   frontend:
-    build:
-      context: ./frontend
+    image: mo4x_teama_frontend
     ports:
       - "80:80"
     depends_on:
       - http-server
+    deploy:
+      replicas: 1
 
   sensor:
-    build:
-      context: ./mqtt
+    image: mo4x_teama_sensor
     depends_on:
       - hivemq
     environment:
       - MQTT_BROKER_HOST=hivemq
     networks:
       - mqtt_net
+    deploy:
+      replicas: 3
 
   hivemq:
     image: hivemq/hivemq-ce
-    container_name: hivemq
     ports:
-      - "1883:1883"   # MQTT
+      - "1883:1883"
     networks:
       - mqtt_net
     volumes:
       - hivemq_conf:/opt/hivemq/conf
       - hivemq_data:/opt/hivemq/data
+    deploy:
+      replicas: 1
 
   mqtt-explorer:
     image: smeagolworms4/mqtt-explorer
-    container_name: mqtt-explorer
     ports:
       - "4000:4000"
     volumes:
@@ -75,10 +80,11 @@ services:
       - mqtt_net
     depends_on:
       - hivemq
+    deploy:
+      replicas: 1
 
   nodered:
     image: nodered/node-red
-    container_name: node-red
     ports:
       - "1880:1880"
     volumes:
@@ -87,15 +93,29 @@ services:
       - mqtt_net
     depends_on:
       - hivemq
+    deploy:
+      replicas: 1
 
   hazelcast-node:
     image: hazelcast/hazelcast:5.3
     environment:
       - HZ_CLUSTERNAME=dev
+      - HAZELCAST_CONFIG=/opt/hazelcast/config/hazelcast.yaml
     networks:
       - hazelcast-net
+    volumes:
+      - ./config/hazelcast.yaml:/opt/hazelcast/config/hazelcast.yaml
     ports:
       - "5701:5701"
+    deploy:
+      replicas: 3
+      placement:
+        max_replicas_per_node: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
 
   hazelcast-mancenter:
     image: hazelcast/management-center:5.3
@@ -108,17 +128,22 @@ services:
       - MC_ADMIN_USER=admin
       - MC_ADMIN_PASSWORD=Geheim42!
     networks:
-      - default
       - hazelcast-net
+      - default
     depends_on:
       - http-server
       - hazelcast-node
+    deploy:
+      replicas: 1
+
 
 networks:
   mqtt_net:
-    driver: bridge
+    driver: overlay
   hazelcast-net:
-    driver: bridge
+    driver: overlay
+  default:
+    driver: overlay
 
 volumes:
   nodered_data:
