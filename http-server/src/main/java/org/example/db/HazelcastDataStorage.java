@@ -8,32 +8,34 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.map.IMap;
 import org.example.SensorData;
 
+import java.util.stream.Collectors;
+
 public class HazelcastDataStorage implements DataStorage {
     private final HazelcastInstance client;
     private final IMap<String, HazelcastJsonValue> map;
     private final Gson gson = new Gson();
 
     public HazelcastDataStorage() {
-        // Hazelcast Client konfigurieren
         ClientConfig config = new ClientConfig();
         config.setClusterName("dev");
         config.setInstanceName("my-java-client");
         config.getNetworkConfig().addAddress("hazelcast-node:5701");
 
-        // Client starten
         this.client = HazelcastClient.newHazelcastClient(config);
         System.out.println("✅ Verbunden mit Hazelcast-Cluster: " + client.getCluster().getMembers());
 
-        // Map abrufen
         this.map = client.getMap("sensorData");
 
-        // Optional: Anzahl vor dem Löschen ermitteln
         int sizeBefore = map.size();
 
-        // Alte Einträge entfernen (vermeidet Typkonflikte)
         System.out.println("🧹 Lösche alte Map-Einträge aus 'sensorData'...");
         map.clear();
         System.out.println("🧹 sensorData Map gelöscht. Vorher: " + sizeBefore + " Einträge.");
+    }
+
+    public HazelcastDataStorage(IMap<String, HazelcastJsonValue> map) {
+        this.client = null;
+        this.map = map;
     }
 
     @Override
@@ -41,7 +43,6 @@ public class HazelcastDataStorage implements DataStorage {
         String jsonStr = gson.toJson(data);
         HazelcastJsonValue jsonValue = new HazelcastJsonValue(jsonStr);
 
-        // Automatisch ID generieren, falls null
         String key = data.getId();
         if (key == null || key.isEmpty()) {
             key = "sensor-" + data.getSensorId() + "-" + System.currentTimeMillis();
@@ -74,8 +75,13 @@ public class HazelcastDataStorage implements DataStorage {
 
     @Override
     public String readAll() {
-        return gson.toJson(map.values());
+        return gson.toJson(
+                map.values().stream()
+                        .map(val -> gson.fromJson(val.toString(), Object.class)) // wichtig!
+                        .collect(Collectors.toList())
+        );
     }
+
 
     @Override
     public void clear() {
