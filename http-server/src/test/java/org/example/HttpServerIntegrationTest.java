@@ -33,7 +33,7 @@ public class HttpServerIntegrationTest {
         PORT = 8080;
         
         InMemoryDataStorage dataStorage = new InMemoryDataStorage();
-        server = new HttpServer(PORT, dataStorage);
+        server = new HttpServer(PORT, dataStorage, dataStorage);
         server.start();
         
         // Wait a bit for the server to start

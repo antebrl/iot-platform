@@ -16,8 +16,9 @@ public class RedundantDataStorage implements DataStorage {
     @Override
     public boolean create(SensorData data) {
         boolean primarySuccess = primary.create(data);
-        boolean backupSuccess = backup.create(data);
-        return primarySuccess && backupSuccess;
+        // Backup (Hazelcast) asynchron nachliefern
+        new Thread(() -> backup.create(data)).start();
+        return primarySuccess;
     }
 
     @Override
@@ -29,15 +30,15 @@ public class RedundantDataStorage implements DataStorage {
     @Override
     public boolean update(SensorData data) {
         boolean primarySuccess = primary.update(data);
-        boolean backupSuccess = backup.update(data);
-        return primarySuccess && backupSuccess;
+        new Thread(() -> backup.update(data)).start();
+        return primarySuccess;
     }
 
     @Override
     public boolean delete(String id) {
         boolean primarySuccess = primary.delete(id);
-        boolean backupSuccess = backup.delete(id);
-        return primarySuccess && backupSuccess;
+        new Thread(() -> backup.delete(id)).start();
+        return primarySuccess;
     }
 
     @Override

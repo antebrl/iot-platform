@@ -21,6 +21,7 @@ public class HttpServer {
     
     private final int port;
     private final DataStorage dataStorage;
+    private final DataStorage hazelcastStorage;
     private ServerSocket serverSocket;
     private boolean running = false;
     private Thread serverThread;
@@ -30,11 +31,13 @@ public class HttpServer {
         String rpcHost = System.getenv().getOrDefault("RPC_DATABASE_HOST", "localhost");
         this.port = DEFAULT_PORT;
         this.dataStorage = new GrpcDataStorage(rpcHost, 50051);
+        this.hazelcastStorage = new InMemoryDataStorage();
     }
     
-    public HttpServer(int port, DataStorage dataStorage) {
+    public HttpServer(int port, DataStorage dataStorage, DataStorage hazelcastStorage) {
         this.port = port;
         this.dataStorage = dataStorage;
+        this.hazelcastStorage = hazelcastStorage;
     }
     
     public void start() throws IOException {
@@ -183,6 +186,8 @@ public class HttpServer {
             SensorData data = gson.fromJson(jsonBody, SensorData.class);
             boolean success = dataStorage.create(data);
             if (success) {
+                // Hazelcast asynchron nach HTTP-Antwort
+                new Thread(() -> hazelcastStorage.create(data)).start();
                 return new HttpResponse.Builder()
                         .status(200, "OK")
                         .header("Content-Type", "text/plain")

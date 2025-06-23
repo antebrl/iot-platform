@@ -19,12 +19,11 @@ public class ServerApplication {
      * @throws IOException If there's an error starting the server
      */
     public static void main(String[] args) throws IOException {
-        // Speicherungsredundanz
         DataStorage inMemoryStorage = new InMemoryDataStorage();
-        DataStorage hazelcastStorage = new HazelcastDataStorage(); // musst du erstellen
-        DataStorage redundantStorage = new RedundantDataStorage(inMemoryStorage, hazelcastStorage);
+        DataStorage redundantStorage = new RedundantDataStorage(inMemoryStorage, inMemoryStorage); // Nur InMemory redundant (oder einfach nur inMemoryStorage)
+        DataStorage hazelcastStorage = new HazelcastDataStorage();
 
-        HttpServer server = new HttpServer(8080, redundantStorage);
+        HttpServer server = new HttpServer(8080, redundantStorage, hazelcastStorage);
         System.out.println("Starting HTTP server...");
         server.start();
         
