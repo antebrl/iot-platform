@@ -99,21 +99,14 @@ services:
   hazelcast-node:
     image: hazelcast/hazelcast:5.3
     environment:
-      - HZ_CLUSTERNAME=dev
       - HAZELCAST_CONFIG=/opt/hazelcast/config/hazelcast.yaml
     networks:
       - hazelcast-net
     volumes:
-      - ./config/hazelcast.yaml:/opt/hazelcast/config/hazelcast.yaml
-    ports:
-      - "5701:5701"
+      - ./config/hazelcast.yaml:/opt/hazelcast/config/hazelcast.yaml:ro
+      - ./scripts/init.sql:/opt/hazelcast/init/init.sql:ro
     deploy:
       replicas: 3
-      placement:
-        max_replicas_per_node: 1
-      update_config:
-        parallelism: 1
-        delay: 10s
       restart_policy:
         condition: on-failure
 
@@ -136,14 +129,16 @@ services:
     deploy:
       replicas: 1
 
-
 networks:
   mqtt_net:
     driver: overlay
+    name: mo4x_teama_mqtt_net
   hazelcast-net:
     driver: overlay
+    name: mo4x_teama_hazelcast-net
   default:
     driver: overlay
+    name: mo4x_teama_default
 
 volumes:
   nodered_data:

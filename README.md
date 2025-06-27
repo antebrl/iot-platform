@@ -38,6 +38,7 @@ SELECT JSON_VALUE(this, '$.sensorId') AS sensorId,
        AVG(CAST(JSON_VALUE(this, '$.temperature') AS DOUBLE)) AS avg_temp
 FROM sensorData
 GROUP BY sensorId;
+
 ```
 ### Nur hohe Temperaturen:
 ```bash

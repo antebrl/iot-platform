@@ -11,23 +11,22 @@ import org.example.SensorData;
 import java.util.stream.Collectors;
 
 public class HazelcastDataStorage implements DataStorage {
-    private HazelcastInstance client;  // Initialisiert später, wenn die Verbindung hergestellt wird.
+    private HazelcastInstance client;
     private final IMap<String, HazelcastJsonValue> map;
     private final Gson gson = new Gson();
 
     public HazelcastDataStorage() {
         ClientConfig config = new ClientConfig();
-        config.setClusterName("dev");  // Cluster-Name
-        config.setInstanceName("my-java-client");  // Client-Name
-        config.getNetworkConfig().addAddress("hazelcast-node:5701");  // Docker Swarm Service Name
+        config.setClusterName("dev");
+        config.setInstanceName("my-java-client");
+        config.getNetworkConfig().addAddress("hazelcast-node:5701");
 
-        // Hazelcast-Client initialisieren und mit Retry-Mechanismus verbinden
         int retryCount = 0;
         while (retryCount < 10) {
             try {
                 client = HazelcastClient.newHazelcastClient(config);
                 System.out.println("✅ Verbunden mit Hazelcast-Cluster: " + client.getCluster().getMembers());
-                break;  // Erfolgreich verbunden, Schleife verlassen
+                break;
             } catch (Exception e) {
                 System.out.println("❌ Verbindung fehlgeschlagen, versuche erneut...");
                 retryCount++;
@@ -35,17 +34,17 @@ public class HazelcastDataStorage implements DataStorage {
                     throw new RuntimeException("Konnte keine Verbindung zum Hazelcast-Cluster herstellen.");
                 }
                 try {
-                    Thread.sleep(2000);  // 2 Sekunden warten, bevor erneut versucht wird
+                    Thread.sleep(2000);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }
             }
         }
 
-        // Hazelcast Map für den Datenspeicher
         if (client != null) {
             this.map = client.getMap("sensorData");
-            map.clear();
+            // Entferne map.clear(), damit die Daten nicht beim Start gelöscht werden
+            System.out.println("Initialisierte Map 'sensorData' mit Größe: " + map.size());
         } else {
             throw new RuntimeException("Hazelcast-Client konnte nicht initialisiert werden.");
         }
@@ -59,6 +58,7 @@ public class HazelcastDataStorage implements DataStorage {
             key = "sensor-" + data.getSensorId() + "-" + System.currentTimeMillis();
         }
         map.put(key, new HazelcastJsonValue(jsonStr));
+        System.out.println("Daten geschrieben unter Key: " + key + ", aktuelle Map-Größe: " + map.size());
         return true;
     }
 
