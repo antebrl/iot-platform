@@ -31,14 +31,12 @@ SELECT JSON_VALUE(this, '$.sensorId') AS sensorId,
        JSON_VALUE(this, '$.temperature') AS temperature
 FROM sensorData;
 ```
-
 ### Durchschnittstemperatur:
 ```bash
 SELECT JSON_VALUE(this, '$.sensorId') AS sensorId,
        AVG(CAST(JSON_VALUE(this, '$.temperature') AS DOUBLE)) AS avg_temp
 FROM sensorData
 GROUP BY sensorId;
-
 ```
 ### Nur hohe Temperaturen:
 ```bash
@@ -47,7 +45,69 @@ SELECT JSON_VALUE(this, '$.sensorId') AS sensorId,
 FROM sensorData
 WHERE CAST(JSON_VALUE(this, '$.temperature') AS DOUBLE) > 25;
 ```
-## 
+### Messwerte eines bestimmten Sensors abfragen (z.B. 450)
+```bash
+SELECT
+CAST(JSON_VALUE (this, '$.sensorId') AS INT) AS sensorId,
+CAST(JSON_VALUE (this, '$.temperature') AS DOUBLE) AS temperature
+FROM
+sensorData
+WHERE
+CAST(JSON_VALUE (this, '$.sensorId') AS INT) = 450;
+```
+### Maximale Temperatur pro Sensor
+```bash
+SELECT
+  CAST(JSON_VALUE(this, '$.sensorId') AS INT) AS sensorId,
+  MAX(CAST(JSON_VALUE(this, '$.temperature') AS DOUBLE)) AS maxTemperature
+FROM sensorData
+GROUP BY CAST(JSON_VALUE(this, '$.sensorId') AS INT);
+```
+### Anzahl der Messwerte pro Sensor
+```bash
+SELECT
+  CAST(JSON_VALUE(this, '$.sensorId') AS INT) AS sensorId,
+  COUNT(*) AS measurementsCount
+FROM sensorData
+GROUP BY CAST(JSON_VALUE(this, '$.sensorId') AS INT);
+```
+### Alle Messungen mit Temperatur und einem Label „hoch“ oder „niedrig“
+```bash
+SELECT
+  sensorId,
+  temperature,
+  CASE
+    WHEN temperature > 25 THEN 'hoch'
+    ELSE 'niedrig'
+  END AS tempLevel
+FROM (
+  SELECT
+    CAST(JSON_VALUE(this, '$.sensorId') AS INT) AS sensorId,
+    CAST(JSON_VALUE(this, '$.temperature') AS DOUBLE) AS temperature
+  FROM sensorData
+);
+```
+### Zusammenfassung von Werten mit mehreren Aggregationen
+```bash
+SELECT
+  sensorId,
+  COUNT(*) AS countMeasurements,
+  AVG(temperature) AS avgTemperature,
+  MIN(temperature) AS minTemperature,
+  MAX(temperature) AS maxTemperature
+FROM (
+  SELECT
+    CAST(JSON_VALUE(this, '$.sensorId') AS INT) AS sensorId,
+    CAST(JSON_VALUE(this, '$.temperature') AS DOUBLE) AS temperature
+  FROM sensorData
+)
+GROUP BY sensorId;
+```
+### 
+```bash
+```
+
+### 
 ```bash
 ```
 
@@ -68,7 +128,7 @@ docker build -t mo4x_teama_sensor ./mqtt
 
 #### Stack deployen
 ```bash
-docker stack deploy -c docker-compose.yml Mo-4X-TeamA
+docker stack deploy -c docker-compose.yml mo4x_teama
 ```
 #### Status prüfen
 ```bash
@@ -80,7 +140,7 @@ docker service scale Mo-4X-TeamA_hazelcast-node=5
 ```
 #### Stack entfernen
 ```bash
-docker stack rm Mo-4X-TeamA
+docker stack rm mo4x_teama
 ```
 
 #### Schaltet Docker Swarm aus 
