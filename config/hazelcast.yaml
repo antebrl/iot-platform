@@ -1,20 +1,11 @@
 hazelcast:
   cluster-name: dev
+  jet:
+    enabled: true                  # ✅ Jet aktivieren
   network:
-    port:
-      port: 5701
-      auto-increment: true
     join:
       multicast:
-        enabled: false
-      tcp-ip:
         enabled: true
-        member-list:
-          - hazelcast-node
-    interfaces:
-      enabled: false
-  jet:
-    enabled: true
   map:
     default:
       backup-count: 1
