@@ -1,0 +1,2 @@
+Label, #Samples, Average, Median, 90% Line, 95% Line, 99% Line, Min, Max, Error %, Trhoughput, Received KB/sec, Sent KB/sec
+HTTP Request	34812	145	143	242	251	267	8	294	2.872572676088705E-5	347.44595484759566	55.306601677121385	72.95007841038385
