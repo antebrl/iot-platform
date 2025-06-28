@@ -12,9 +12,7 @@ hazelcast:
         member-list:
           - hazelcast-node
     interfaces:
-      enabled: true
-      interfaces:
-        - 10.0.3.*
+      enabled: false
   jet:
     enabled: true
   map:

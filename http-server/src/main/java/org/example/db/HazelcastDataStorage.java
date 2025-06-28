@@ -8,12 +8,26 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.map.IMap;
 import org.example.SensorData;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class HazelcastDataStorage implements DataStorage {
+public class HazelcastDataStorage implements TwoPCDataStorage {
     private HazelcastInstance client;
     private final IMap<String, HazelcastJsonValue> map;
     private final Gson gson = new Gson();
+    private final ConcurrentHashMap<String, TransactionData> preparedTransactions = new ConcurrentHashMap<>();
+    
+    private static class TransactionData {
+        final String operation;
+        final SensorData data;
+        final HazelcastJsonValue originalValue; // For rollback
+        
+        TransactionData(String operation, SensorData data, HazelcastJsonValue originalValue) {
+            this.operation = operation;
+            this.data = data;
+            this.originalValue = originalValue;
+        }
+    }
 
     public HazelcastDataStorage() {
         ClientConfig config = new ClientConfig();
@@ -43,7 +57,6 @@ public class HazelcastDataStorage implements DataStorage {
 
         if (client != null) {
             this.map = client.getMap("sensorData");
-            // Entferne map.clear(), damit die Daten nicht beim Start gelöscht werden
             System.out.println("Initialisierte Map 'sensorData' mit Größe: " + map.size());
         } else {
             throw new RuntimeException("Hazelcast-Client konnte nicht initialisiert werden.");
@@ -97,5 +110,109 @@ public class HazelcastDataStorage implements DataStorage {
 
     public HazelcastInstance getHazelcastInstance() {
         return client;
+    }
+    
+    // 2PC Protocol Implementation
+    @Override
+    public boolean prepare(String transactionId, String operation, SensorData data) {
+        try {
+            HazelcastJsonValue originalValue = null;
+            String key = data.getId();
+            
+            // Validate the operation can be performed
+            switch (operation) {
+                case "CREATE":
+                    if (key == null || key.isEmpty()) {
+                        key = "sensor-" + data.getSensorId() + "-" + System.currentTimeMillis();
+                        data = SensorData.builder()
+                                .id(key)
+                                .sensorId(data.getSensorId())
+                                .temperature(data.getTemperature())
+                                .build();
+                    }
+                    if (map.containsKey(key)) {
+                        return false; // Key already exists
+                    }
+                    break;
+                    
+                case "UPDATE":
+                    if (key == null || !map.containsKey(key)) {
+                        return false; // Key doesn't exist
+                    }
+                    originalValue = map.get(key);
+                    break;
+                    
+                case "DELETE":
+                    if (key == null || !map.containsKey(key)) {
+                        return false; // Key doesn't exist
+                    }
+                    originalValue = map.get(key);
+                    break;
+                    
+                default:
+                    return false; // Unknown operation
+            }
+            
+            // Store transaction data for commit/abort
+            preparedTransactions.put(transactionId, new TransactionData(operation, data, originalValue));
+            System.out.println("Hazelcast prepared transaction: " + transactionId + " for operation: " + operation);
+            return true;
+            
+        } catch (Exception e) {
+            System.err.println("Error preparing Hazelcast transaction: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    @Override
+    public boolean commit(String transactionId) {
+        TransactionData txData = preparedTransactions.remove(transactionId);
+        if (txData == null) {
+            System.err.println("No prepared transaction found for ID: " + transactionId);
+            return false;
+        }
+        
+        try {
+            String key = txData.data.getId();
+            
+            switch (txData.operation) {
+                case "CREATE":
+                    map.put(key, new HazelcastJsonValue(gson.toJson(txData.data)));
+                    System.out.println("Hazelcast committed CREATE for key: " + key);
+                    break;
+                    
+                case "UPDATE":
+                    map.put(key, new HazelcastJsonValue(gson.toJson(txData.data)));
+                    System.out.println("Hazelcast committed UPDATE for key: " + key);
+                    break;
+                    
+                case "DELETE":
+                    map.remove(key);
+                    System.out.println("Hazelcast committed DELETE for key: " + key);
+                    break;
+                    
+                default:
+                    return false;
+            }
+            
+            return true;
+            
+        } catch (Exception e) {
+            System.err.println("Error committing Hazelcast transaction: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    @Override
+    public boolean abort(String transactionId) {
+        TransactionData txData = preparedTransactions.remove(transactionId);
+        if (txData == null) {
+            System.err.println("No prepared transaction found for ID: " + transactionId);
+            return false;
+        }
+        
+        System.out.println("Hazelcast aborted transaction: " + transactionId);
+        // No actual rollback needed since we didn't change anything yet
+        return true;
     }
 }

@@ -10,6 +10,11 @@ service DatabaseService {
   rpc Update (UpdateRequest) returns (Response);
   rpc Delete (DeleteRequest) returns (Response);
   rpc ReadAll (Empty) returns (SensorDataStoredList);
+  
+  // 2PC Protocol methods
+  rpc Prepare (TransactionRequest) returns (PrepareResponse);
+  rpc Commit (TransactionId) returns (Response);
+  rpc Abort (TransactionId) returns (Response);
 }
 
 message Key {
@@ -46,4 +51,25 @@ message UpdateRequest {
 
 message DeleteRequest {
   string id = 1;
+}
+
+// 2PC Messages
+message TransactionRequest {
+  string transaction_id = 1;
+  string operation = 2; // CREATE, UPDATE, DELETE
+  oneof data {
+    SensorDataRequest create_data = 3;
+    UpdateRequest update_data = 4;
+    DeleteRequest delete_data = 5;
+  }
+}
+
+message TransactionId {
+  string transaction_id = 1;
+}
+
+message PrepareResponse {
+  string transaction_id = 1;
+  bool prepared = 2;
+  string message = 3;
 }

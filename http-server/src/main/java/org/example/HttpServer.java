@@ -8,9 +8,16 @@ import java.net.*;
 import java.util.*;
 
 import org.example.db.DataStorage;
+import org.example.db.TwoPCDataStorage;
+import org.example.db.TwoPCCoordinator;
 import org.example.db.InMemoryDataStorage;
 import org.example.db.GrpcDataStorage;
+import org.example.db.HazelcastDataStorage;
 import org.example.SensorData;
+
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A simple HTTP server that handles GET and POST requests for sensor data.
@@ -21,7 +28,6 @@ public class HttpServer {
     
     private final int port;
     private final DataStorage dataStorage;
-    private final DataStorage hazelcastStorage;
     private ServerSocket serverSocket;
     private boolean running = false;
     private Thread serverThread;
@@ -30,14 +36,36 @@ public class HttpServer {
     public HttpServer() {
         String rpcHost = System.getenv().getOrDefault("RPC_DATABASE_HOST", "localhost");
         this.port = DEFAULT_PORT;
-        this.dataStorage = new GrpcDataStorage(rpcHost, 50051);
-        this.hazelcastStorage = new InMemoryDataStorage();
+        
+        // Create 2PC participants
+        TwoPCDataStorage grpcStorage = new GrpcDataStorage(rpcHost, 50051);
+        
+        // Check if Hazelcast should be skipped
+        String skipHazelcast = System.getenv("SKIP_HAZELCAST");
+        List<TwoPCDataStorage> participants = new ArrayList<>();
+        participants.add(grpcStorage);
+        
+        if (!"true".equals(skipHazelcast)) {
+            try {
+                TwoPCDataStorage hazelcastStorage = new HazelcastDataStorage();
+                participants.add(hazelcastStorage);
+                System.out.println("✅ Hazelcast storage added to 2PC participants");
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to initialize Hazelcast storage: " + e.getMessage());
+                System.out.println("📝 Continuing with RPC database only");
+            }
+        } else {
+            System.out.println("📝 Hazelcast skipped (SKIP_HAZELCAST=true)");
+        }
+        
+        // Create 2PC coordinator with available participants
+        this.dataStorage = new TwoPCCoordinator(participants);
+        System.out.println("✅ 2PC Coordinator initialized with " + participants.size() + " participant(s)");
     }
     
-    public HttpServer(int port, DataStorage dataStorage, DataStorage hazelcastStorage) {
+    public HttpServer(int port, DataStorage dataStorage) {
         this.port = port;
         this.dataStorage = dataStorage;
-        this.hazelcastStorage = hazelcastStorage;
     }
     
     public void start() throws IOException {
@@ -79,6 +107,11 @@ public class HttpServer {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+        }
+        
+        // Shutdown 2PC coordinator if it exists
+        if (dataStorage instanceof TwoPCCoordinator) {
+            ((TwoPCCoordinator) dataStorage).shutdown();
         }
     }
     
@@ -186,8 +219,6 @@ public class HttpServer {
             SensorData data = gson.fromJson(jsonBody, SensorData.class);
             boolean success = dataStorage.create(data);
             if (success) {
-                // Hazelcast asynchron nach HTTP-Antwort
-                new Thread(() -> hazelcastStorage.create(data)).start();
                 return new HttpResponse.Builder()
                         .status(200, "OK")
                         .header("Content-Type", "text/plain")
