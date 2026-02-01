@@ -2,15 +2,7 @@ package org.example.db;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import org.example.DatabaseServiceGrpc;
-import org.example.Empty;
-import org.example.Key;
-import org.example.Response;
-import org.example.SensorDataRequest;
-import org.example.SensorDataStored;
-import org.example.SensorDataStoredList;
-import org.example.UpdateRequest;
-import org.example.DeleteRequest;
+import org.example.*;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -52,5 +44,18 @@ public class GrpcDatabaseClient {
     public SensorDataStoredList readAll() {
         Empty request = Empty.newBuilder().build();
         return stub.readAll(request);
+    }
+    
+    // 2PC Protocol methods
+    public PrepareResponse prepare(TransactionRequest request) {
+        return stub.prepare(request);
+    }
+    
+    public Response commit(TransactionId transactionId) {
+        return stub.commit(transactionId);
+    }
+    
+    public Response abort(TransactionId transactionId) {
+        return stub.abort(transactionId);
     }
 }

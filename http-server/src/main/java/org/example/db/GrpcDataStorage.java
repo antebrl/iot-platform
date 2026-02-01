@@ -1,16 +1,12 @@
 package org.example.db;
 
 import com.google.gson.Gson;
-import org.example.SensorData;
-import org.example.SensorDataRequest;
-import org.example.SensorDataStored;
-import org.example.SensorDataStoredList;
-import org.example.Response;
+import org.example.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
-public class GrpcDataStorage implements DataStorage {
+public class GrpcDataStorage implements TwoPCDataStorage {
     private final GrpcDatabaseClient grpcClient;
     private final Gson gson = new Gson();
 
@@ -72,6 +68,71 @@ public class GrpcDataStorage implements DataStorage {
         // Delete each entry individually
         for (SensorDataStored entry : entries) {
             grpcClient.delete(entry.getId());
+        }
+    }
+    
+    // 2PC Protocol Implementation
+    @Override
+    public boolean prepare(String transactionId, String operation, SensorData data) {
+        try {
+            TransactionRequest.Builder requestBuilder = TransactionRequest.newBuilder()
+                    .setTransactionId(transactionId)
+                    .setOperation(operation);
+            
+            switch (operation) {
+                case "CREATE":
+                    requestBuilder.setCreateData(data.toGrpcRequest());
+                    break;
+                case "UPDATE":
+                    UpdateRequest updateReq = UpdateRequest.newBuilder()
+                            .setId(data.getId())
+                            .setUpdatedData(data.toGrpcRequest())
+                            .build();
+                    requestBuilder.setUpdateData(updateReq);
+                    break;
+                case "DELETE":
+                    DeleteRequest deleteReq = DeleteRequest.newBuilder()
+                            .setId(data.getId())
+                            .build();
+                    requestBuilder.setDeleteData(deleteReq);
+                    break;
+                default:
+                    return false;
+            }
+            
+            PrepareResponse response = grpcClient.prepare(requestBuilder.build());
+            return response.getPrepared();
+        } catch (Exception e) {
+            System.err.println("Error in prepare phase: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    @Override
+    public boolean commit(String transactionId) {
+        try {
+            TransactionId txId = TransactionId.newBuilder()
+                    .setTransactionId(transactionId)
+                    .build();
+            Response response = grpcClient.commit(txId);
+            return response.getSuccess();
+        } catch (Exception e) {
+            System.err.println("Error in commit phase: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    @Override
+    public boolean abort(String transactionId) {
+        try {
+            TransactionId txId = TransactionId.newBuilder()
+                    .setTransactionId(transactionId)
+                    .build();
+            Response response = grpcClient.abort(txId);
+            return response.getSuccess();
+        } catch (Exception e) {
+            System.err.println("Error in abort phase: " + e.getMessage());
+            return false;
         }
     }
 }
