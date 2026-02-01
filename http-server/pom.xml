@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -12,12 +11,24 @@
         <maven.compiler.source>23</maven.compiler.source>
         <maven.compiler.target>23</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>    <dependencies>
+    </properties>
+
+    <dependencies>
+        <!-- Hazelcast Core -->
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>5.5.0</version>
+        </dependency>
+
+        <!-- JSON Support -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
         </dependency>
+
+        <!-- JUnit 5 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -30,6 +41,31 @@
             <version>5.10.2</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Mockito Core -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.4.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Optional: Mockito JUnit Jupiter Integration -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.4.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>1.14.12</version> <!-- oder die neueste -->
+            <scope>test</scope>
+        </dependency>
+
+        <!-- gRPC -->
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
@@ -45,11 +81,15 @@
             <artifactId>grpc-stub</artifactId>
             <version>1.60.0</version>
         </dependency>
+
+        <!-- Protobuf -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
             <version>3.25.1</version>
         </dependency>
+
+        <!-- Annotations -->
         <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
@@ -59,7 +99,6 @@
 
     <build>
         <extensions>
-            <!-- Ermittelt OS-Classifier für protoc-Binary -->
             <extension>
                 <groupId>kr.motd.maven</groupId>
                 <artifactId>os-maven-plugin</artifactId>
@@ -70,7 +109,8 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.1</version>                <configuration>
+                <version>3.4.1</version>
+                <configuration>
                     <archive>
                         <manifest>
                             <mainClass>org.example.ServerApplication</mainClass>
@@ -84,7 +124,8 @@
                 <configuration>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>                    <archive>
+                    </descriptorRefs>
+                    <archive>
                         <manifest>
                             <mainClass>org.example.ServerApplication</mainClass>
                         </manifest>
@@ -98,11 +139,15 @@
                             <goal>single</goal>
                         </goals>
                     </execution>
-                </executions>            </plugin>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
+                <configuration>
+                    <argLine>-Dnet.bytebuddy.experimental=true</argLine>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -113,7 +158,7 @@
                     <target>${maven.compiler.target}</target>
                     <release>${maven.compiler.source}</release>
                     <annotationProcessorPaths>
-                         <path>
+                        <path>
                             <groupId>javax.annotation</groupId>
                             <artifactId>javax.annotation-api</artifactId>
                             <version>1.3.2</version>
@@ -137,7 +182,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- Protobuf & gRPC Code-Gen -->
             <plugin>
                 <groupId>org.xolstice.maven.plugins</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>
@@ -150,7 +194,7 @@
                     <pluginArtifact>
                         io.grpc:protoc-gen-grpc-java:1.61.0:exe:${os.detected.classifier}
                     </pluginArtifact>
-                     <outputDirectory>${project.build.directory}/generated-sources/protobuf/java</outputDirectory>
+                    <outputDirectory>${project.build.directory}/generated-sources/protobuf/java</outputDirectory>
                     <clearOutputDirectory>false</clearOutputDirectory>
                 </configuration>
                 <executions>

@@ -76,8 +76,8 @@
             </value>
           </objProp>
           <stringProp name="filename"></stringProp>
-          <stringProp name="RespTimeGraph.interval">3000</stringProp>
-          <stringProp name="RespTimeGraph.graphtitle">Response Time (3000ms Interval, 100 Threads, 100 Seconds, linear increase of threads)</stringProp>
+          <stringProp name="RespTimeGraph.interval">2000</stringProp>
+          <stringProp name="RespTimeGraph.graphtitle">HTTP 2PC: Response Time (2000ms Interval, 100 Threads, 100 Seconds, linear increase of threads)</stringProp>
           <stringProp name="RespTimeGraph.xaxistimeformat">mm:ss</stringProp>
         </ResultCollector>
         <hashTree/>

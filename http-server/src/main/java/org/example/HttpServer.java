@@ -8,9 +8,16 @@ import java.net.*;
 import java.util.*;
 
 import org.example.db.DataStorage;
+import org.example.db.TwoPCDataStorage;
+import org.example.db.TwoPCCoordinator;
 import org.example.db.InMemoryDataStorage;
 import org.example.db.GrpcDataStorage;
+import org.example.db.HazelcastDataStorage;
 import org.example.SensorData;
+
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A simple HTTP server that handles GET and POST requests for sensor data.
@@ -29,7 +36,31 @@ public class HttpServer {
     public HttpServer() {
         String rpcHost = System.getenv().getOrDefault("RPC_DATABASE_HOST", "localhost");
         this.port = DEFAULT_PORT;
-        this.dataStorage = new GrpcDataStorage(rpcHost, 50051);
+        
+        // Create 2PC participants
+        TwoPCDataStorage grpcStorage = new GrpcDataStorage(rpcHost, 50051);
+        
+        // Check if Hazelcast should be skipped
+        String skipHazelcast = System.getenv("SKIP_HAZELCAST");
+        List<TwoPCDataStorage> participants = new ArrayList<>();
+        participants.add(grpcStorage);
+        
+        if (!"true".equals(skipHazelcast)) {
+            try {
+                TwoPCDataStorage hazelcastStorage = new HazelcastDataStorage();
+                participants.add(hazelcastStorage);
+                System.out.println("✅ Hazelcast storage added to 2PC participants");
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to initialize Hazelcast storage: " + e.getMessage());
+                System.out.println("📝 Continuing with RPC database only");
+            }
+        } else {
+            System.out.println("📝 Hazelcast skipped (SKIP_HAZELCAST=true)");
+        }
+        
+        // Create 2PC coordinator with available participants
+        this.dataStorage = new TwoPCCoordinator(participants);
+        System.out.println("✅ 2PC Coordinator initialized with " + participants.size() + " participant(s)");
     }
     
     public HttpServer(int port, DataStorage dataStorage) {
@@ -76,6 +107,11 @@ public class HttpServer {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+        }
+        
+        // Shutdown 2PC coordinator if it exists
+        if (dataStorage instanceof TwoPCCoordinator) {
+            ((TwoPCCoordinator) dataStorage).shutdown();
         }
     }
     
